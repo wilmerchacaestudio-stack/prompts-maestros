@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IA · Imágenes como Input Pedagógico</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111111;
+    color: #F5F0E8;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .wrapper {
+    width: 100%;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .diagram-area { display: flex; align-items: center; justify-content: center; }
+  .diagram { position: relative; width: 420px; height: 420px; }
+  .diagram::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    border: 1px solid rgba(232,73,15,0.2);
+  }
+  .center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    background: #1A1A1A;
+    border: 2px solid #E8490F;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 10;
+    box-shadow: 0 0 40px rgba(232,73,15,0.15);
+    padding: 12px;
+  }
+  .center-title { font-size: 14px; font-weight: 900; letter-spacing: 1px; color: #F5F0E8; text-transform: uppercase; line-height: 1.2; }
+  .center-sub { font-size: 8px; letter-spacing: 1.5px; color: #E8490F; margin-top: 6px; text-transform: uppercase; line-height: 1.4; }
+  .node {
+    position: absolute;
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    background: #1E1E1E;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    z-index: 5;
+    padding: 8px;
+  }
+  .node:hover, .node.active { background: #E8490F; border-color: #E8490F; transform: scale(1.12); box-shadow: 0 0 24px rgba(232,73,15,0.5); }
+  .node span { font-size: 7.5px; font-weight: 700; letter-spacing: 0.3px; line-height: 1.3; text-transform: uppercase; color: #F5F0E8; }
+  .node-num {
+    position: absolute; top: -6px; right: -6px;
+    width: 18px; height: 18px;
+    background: #E8490F; border-radius: 50%;
+    font-size: 8px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    color: white; transition: background 0.25s;
+  }
+  .node.active .node-num, .node:hover .node-num { background: white; color: #E8490F; }
+  .n1 { top:   7px; left: 172px; }
+  .n2 { top:  95px; left: 325px; }
+  .n3 { top: 280px; left: 325px; }
+  .n4 { top: 367px; left: 172px; }
+  .n5 { top: 280px; left:  19px; }
+  .n6 { top:  95px; left:  19px; }
+
+  /* PANEL */
+  .panel {
+    background: #1A1A1A;
+    border: 1px solid rgba(255,255,255,0.08);
+    min-height: 500px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: #E8490F; z-index: 2; }
+  .panel-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 16px; height: 500px; opacity: 0.3; padding: 40px;
+  }
+  .panel-empty .hint-icon { font-size: 40px; }
+  .panel-empty p { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: #888; line-height: 1.8; }
+  .panel-content { display: none; flex-direction: column; height: 100%; }
+  .panel-content.visible { display: flex; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Selector IA */
+  .ia-selector { display: none; gap: 8px; padding: 14px 32px 0 40px; flex-shrink: 0; flex-wrap: wrap; }
+  .ia-selector.visible { display: flex; }
+  .ia-btn {
+    padding: 5px 14px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; border: 1.5px solid rgba(255,255,255,0.15);
+    background: transparent; color: #888; cursor: pointer; transition: all 0.2s; border-radius: 2px;
+  }
+  .ia-btn:hover { border-color: #E8490F; color: #E8490F; }
+  .ia-btn.ia-active { background: #E8490F; border-color: #E8490F; color: white; }
+
+  .panel-header { padding: 14px 32px 14px 40px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .panel-tag { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #E8490F; font-weight: 700; margin-bottom: 6px; }
+  .panel-title { font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2; color: #F5F0E8; }
+  .panel-body { padding: 14px 32px 18px 40px; overflow-y: auto; flex: 1; }
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-thumb { background: #E8490F; border-radius: 2px; }
+  .bloque { margin-bottom: 14px; }
+  .bloque-label { font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: #888; font-weight: 700; margin-bottom: 7px; }
+  .bloque-texto { font-size: 13px; line-height: 1.65; color: #C0B8AC; }
+  .pasos { list-style: none; }
+  .pasos li { display: flex; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12.5px; line-height: 1.6; color: #C0B8AC; align-items: flex-start; }
+  .pasos li:last-child { border-bottom: none; }
+  .paso-num { font-size: 10px; font-weight: 900; color: #E8490F; min-width: 20px; padding-top: 2px; flex-shrink: 0; }
+  .prompt-box { background: rgba(232,73,15,0.06); border-left: 3px solid #E8490F; padding: 12px 16px; margin-top: 4px; }
+  .prompt-box p { font-size: 12.5px; font-style: italic; line-height: 1.7; color: #F5F0E8; }
+  .btn-prompt {
+    margin: 0 32px 18px 40px; background: #E8490F; color: white; border: none;
+    padding: 12px 24px; font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; cursor: pointer; width: calc(100% - 72px);
+    transition: background 0.2s; flex-shrink: 0;
+  }
+  .btn-prompt:hover { background: #c93e0d; }
+  .btn-prompt.copied { background: #2A2A2A; color: #E8490F; }
+  .prompt-text { display: none; }
+
+  @media (max-width: 750px) {
+    .wrapper { grid-template-columns: 1fr; }
+    .diagram { width: 340px; height: 340px; }
+    .diagram::before { width: 240px; height: 240px; }
+    .node { width: 64px; height: 64px; }
+    .center { width: 110px; height: 110px; }
+    .n1 { top: 4px; left: 138px; } .n2 { top: 74px; left: 262px; }
+    .n3 { top: 228px; left: 262px; } .n4 { top: 298px; left: 138px; }
+    .n5 { top: 228px; left: 14px; } .n6 { top: 74px; left: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- DIAGRAMA -->
+  <div class="diagram-area">
+    <div class="diagram">
+      <div class="center">
+        <div class="center-title">IA +<br>Imagen</div>
+        <div class="center-sub">Input<br>pedagógico</div>
+      </div>
+      <div class="node n1" onclick="show(1)" id="node-1"><div class="node-num">1</div><span>Trabajo de estudiantes</span></div>
+      <div class="node n2" onclick="show(2)" id="node-2"><div class="node-num">2</div><span>Tu planificación de clase</span></div>
+      <div class="node n3" onclick="show(3)" id="node-3"><div class="node-num">3</div><span>Producción grupal en aula</span></div>
+      <div class="node n4" onclick="show(4)" id="node-4"><div class="node-num">4</div><span>Tu material didáctico</span></div>
+      <div class="node n5" onclick="show(5)" id="node-5"><div class="node-num">5</div><span>Contexto digital de tus estudiantes</span></div>
+      <div class="node n6" onclick="show(6)" id="node-6"><div class="node-num">6</div><span>Dos enfoques pedagógicos</span></div>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div class="panel">
+    <div class="panel-empty" id="panel-empty">
+      <div class="hint-icon">◎</div>
+      <p>Haz clic en uno de los<br>seis ejercicios para ver<br>el prompt listo para usar</p>
+    </div>
+
+    <!-- SELECTOR IA -->
+    <div class="ia-selector" id="ia-selector">
+      <button class="ia-btn ia-active" onclick="setIA('claude')">Claude</button>
+      <button class="ia-btn" onclick="setIA('chatgpt')">ChatGPT</button>
+      <button class="ia-btn" onclick="setIA('gemini')">Gemini</button>
+    </div>
+
+    <!-- E1 -->
+    <div class="panel-content" id="pc-1">
+      <div class="panel-header"><div class="panel-tag">Ejercicio 01 · Evaluación</div><div class="panel-title">Analiza el trabajo<br>de tus estudiantes</div></div>
+      <div class="panel-body">
+        <div class="bloque"><div class="bloque-label">Qué hacer</div>
+          <ul class="pasos">
+            <li><span class="paso-num">01</span><span>Fotografía o escanea un trabajo escrito, esquema o mapa conceptual de un estudiante.</span></li>
+            <li><span class="paso-num">02</span><span id="p2-1">Abre Claude, crea una nueva conversación y sube la imagen directamente al chat.</span></li>
+            <li><span class="paso-num">03</span><span>Copia el prompt y pégalo junto a la imagen.</span></li>
+          </ul>
+        </div>
+        <div class="bloque"><div class="bloque-label">Prompt listo para usar</div>
+          <div class="prompt-box"><p>"Soy docente universitario de [asignatura]. Este es un trabajo de mi estudiante sobre [tema]. ¿Qué nivel de comprensión muestra? ¿Qué conceptos están bien apropiados y cuáles parecen memorización sin comprensión real? No lo evalúes con nota. Dame orientaciones concretas para mi próxima intervención pedagógica con este estudiante."</p></div>
+        </div>
+        <div class="bloque"><div class="bloque-label">Para qué sirve</div><div class="bloque-texto">La IA lee el trabajo como lo haría un colega pedagogo: identifica lo que el estudiante entiende, lo que confunde y lo que aún no alcanza, sin reemplazar tu criterio docente.</div></div>
+      </div>
+      <button class="btn-prompt" onclick="copiar(1)">Copiar prompt</button>
+    </div>
+
+    <!-- E2 -->
+    <div class="panel-content" id="pc-2">
+      <div class="panel-header"><div class="panel-tag">Ejercicio 02 · Diseño</div><div class="panel-title">Detecta la teoría implícita<br>en tu planificación</div></div>
+      <div class="panel-body">
+        <div class="bloque"><div class="bloque-label">Qué hacer</div>
+          <ul class="pasos">
+            <li><span class="paso-num">01</span><span>Fotografía tu planificación de clase, tu silabo o tu guía de estudio.</span></li>
+            <li><span class="paso-num">02</span><span id="p2-2">Abre Claude, crea una nueva conversación y sube la imagen directamente al chat.</span></li>
+            <li><span class="paso-num">03</span><span>Copia el prompt y pégalo.</span></li>
+          </ul>
+        </div>
+        <div class="bloque"><div class="bloque-label">Prompt listo para usar</div>
+          <div class="prompt-box"><p>"Este es mi plan de clase para [asignatura]. ¿Qué teoría del aprendizaje está implícita en su estructura? ¿Es coherente con un enfoque centrado en el estudiante o sigue siendo una clase centrada en el docente y el contenido? Sé específico con ejemplos del documento."</p></div>
+        </div>
+        <div class="bloque"><div class="bloque-label">Para qué sirve</div><div class="bloque-texto">La mayoría de los docentes planifica desde una teoría que nunca nombraron. La IA la hace visible para que puedas decidir conscientemente si quieres cambiarla o mantenerla.</div></div>
+      </div>
+      <button class="btn-prompt" onclick="copiar(2)">Copiar prompt</button>
+    </div>
+
+    <!-- E3 -->
+    <div class="panel-content" id="pc-3">
+      <div class="panel-header"><div class="panel-tag">Ejercicio 03 · Observación</div><div class="panel-title">Interpreta la producción<br>grupal de tu aula</div></div>
+      <div class="panel-body">
+        <div class="bloque"><div class="bloque-label">Qué hacer</div>
+          <ul class="pasos">
+            <li><span class="paso-num">01</span><span>Durante tu clase fotografía (con permiso) los esquemas o producciones que hicieron en grupo.</span></li>
+            <li><span class="paso-num">02</span><span id="p2-3">Abre Claude, crea una nueva conversación y sube la imagen directamente al chat.</span></li>
+            <li><span class="paso-num">03</span><span>Copia el prompt y pégalo.</span></li>
+          </ul>
+        </div>
+        <div class="bloque"><div class="bloque-label">Prompt listo para usar</div>
+          <div class="prompt-box"><p>"Esta es la producción de un grupo de estudiantes universitarios de [asignatura] trabajando sobre [tema]. ¿Qué están entendiendo correctamente? ¿Qué están confundiendo? ¿Qué pregunta les haría yo como docente para profundizar su comprensión sin darles la respuesta directamente?"</p></div>
+        </div>
+        <div class="bloque"><div class="bloque-label">Para qué sirve</div><div class="bloque-texto">Convierte la producción del aula en datos pedagógicos procesables. La IA te sugiere la pregunta correcta para el siguiente momento, no la respuesta que el estudiante debe repetir.</div></div>
+      </div>
+      <button class="btn-prompt" onclick="copiar(3)">Copiar prompt</button>
+    </div>
+
+    <!-- E4 -->
+    <div class="panel-content" id="pc-4">
+      <div class="panel-header"><div class="panel-tag">Ejercicio 04 · Recursos</div><div class="panel-title">Evalúa tu propio<br>material didáctico</div></div>
+      <div class="panel-body">
+        <div class="bloque"><div class="bloque-label">Qué hacer</div>
+          <ul class="pasos">
+            <li><span class="paso-num">01</span><span>Fotografía una diapositiva, un handout o cualquier material que uses habitualmente en clase.</span></li>
+            <li><span class="paso-num">02</span><span id="p2-4">Abre Claude, crea una nueva conversación y sube la imagen directamente al chat.</span></li>
+            <li><span class="paso-num">03</span><span>Copia el prompt y pégalo.</span></li>
+          </ul>
+        </div>
+        <div class="bloque"><div class="bloque-label">Prompt listo para usar</div>
+          <div class="prompt-box"><p>"Este es un recurso que uso en mis clases universitarias de [asignatura]. ¿Este material invita al estudiante a pensar o le da todo resuelto? ¿Qué cambiarías para activar la participación activa en lugar de la recepción pasiva? Dame dos o tres modificaciones concretas."</p></div>
+        </div>
+        <div class="bloque"><div class="bloque-label">Para qué sirve</div><div class="bloque-texto">Es muy difícil ver tus propios materiales con ojos críticos. La IA actúa como un par que te hace las preguntas que normalmente no te haces sobre lo que ya tienes.</div></div>
+      </div>
+      <button class="btn-prompt" onclick="copiar(4)">Copiar prompt</button>
+    </div>
+
+    <!-- E5 -->
+    <div class="panel-content" id="pc-5">
+      <div class="panel-header"><div class="panel-tag">Ejercicio 05 · Contexto</div><div class="panel-title">Investiga el mundo digital<br>de tus estudiantes</div></div>
+      <div class="panel-body">
+        <div class="bloque"><div class="bloque-label">Qué hacer</div>
+          <ul class="pasos">
+            <li><span class="paso-num">01</span><span>Toma una captura del tipo de contenido digital que consumen tus estudiantes: memes, TikToks, formatos visuales (sin datos personales).</span></li>
+            <li><span class="paso-num">02</span><span id="p2-5">Abre Claude, crea una nueva conversación y sube la imagen directamente al chat.</span></li>
+            <li><span class="paso-num">03</span><span>Copia el prompt y pégalo.</span></li>
+          </ul>
+        </div>
+        <div class="bloque"><div class="bloque-label">Prompt listo para usar</div>
+          <div class="prompt-box"><p>"Este es el tipo de contenido digital que consumen mis estudiantes universitarios de [carrera, año]. ¿Qué estructuras narrativas, formatos y lógicas de comunicación usa este contenido? ¿Cómo podría construir puentes entre este lenguaje y mi asignatura de [tema] sin perder el rigor académico?"</p></div>
+        </div>
+        <div class="bloque"><div class="bloque-label">Para qué sirve</div><div class="bloque-texto">Antes de diseñar para tus estudiantes necesitas entender cómo procesan la información. La IA analiza el lenguaje visual de su mundo y te ayuda a conectarlo con tu asignatura.</div></div>
+      </div>
+      <button class="btn-prompt" onclick="copiar(5)">Copiar prompt</button>
+    </div>
+
+    <!-- E6 -->
+    <div class="panel-content" id="pc-6">
+      <div class="panel-header"><div class="panel-tag">Ejercicio 06 · Reflexión</div><div class="panel-title">Contrasta dos enfoques<br>pedagógicos</div></div>
+      <div class="panel-body">
+        <div class="bloque"><div class="bloque-label">Qué hacer</div>
+          <ul class="pasos">
+            <li><span class="paso-num">01</span><span>Busca dos imágenes de aulas distintas: una tradicional (filas, pizarrón) y una activa (grupos, producción visible).</span></li>
+            <li><span class="paso-num">02</span><span id="p2-6">Abre Claude, crea una nueva conversación y sube ambas imágenes en el mismo mensaje.</span></li>
+            <li><span class="paso-num">03</span><span>Copia el prompt y pégalo.</span></li>
+          </ul>
+        </div>
+        <div class="bloque"><div class="bloque-label">Prompt listo para usar</div>
+          <div class="prompt-box"><p>"Estas son dos aulas universitarias con disposiciones distintas. ¿Qué tipo de aprendizaje está favoreciendo cada una? ¿Qué rol tiene el docente en cada espacio? ¿Qué está obstaculizando el aprendizaje en cada caso, aunque no sea evidente a primera vista?"</p></div>
+        </div>
+        <div class="bloque"><div class="bloque-label">Para qué sirve</div><div class="bloque-texto">El espacio físico comunica una teoría pedagógica antes de que el docente diga una sola palabra. Este ejercicio te entrena para leer críticamente los entornos de aprendizaje, incluido el tuyo propio.</div></div>
+      </div>
+      <button class="btn-prompt" onclick="copiar(6)">Copiar prompt</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Prompts para copiar -->
+<textarea class="prompt-text" id="pt-1">"Soy docente universitario de [asignatura]. Este es un trabajo de mi estudiante sobre [tema]. ¿Qué nivel de comprensión muestra? ¿Qué conceptos están bien apropiados y cuáles parecen memorización sin comprensión real? No lo evalúes con nota. Dame orientaciones concretas para mi próxima intervención pedagógica con este estudiante."</textarea>
+<textarea class="prompt-text" id="pt-2">"Este es mi plan de clase para [asignatura]. ¿Qué teoría del aprendizaje está implícita en su estructura? ¿Es coherente con un enfoque centrado en el estudiante o sigue siendo una clase centrada en el docente y el contenido? Sé específico con ejemplos del documento."</textarea>
+<textarea class="prompt-text" id="pt-3">"Esta es la producción de un grupo de estudiantes universitarios de [asignatura] trabajando sobre [tema]. ¿Qué están entendiendo correctamente? ¿Qué están confundiendo? ¿Qué pregunta les haría yo como docente para profundizar su comprensión sin darles la respuesta directamente?"</textarea>
+<textarea class="prompt-text" id="pt-4">"Este es un recurso que uso en mis clases universitarias de [asignatura]. ¿Este material invita al estudiante a pensar o le da todo resuelto? ¿Qué cambiarías para activar la participación activa en lugar de la recepción pasiva? Dame dos o tres modificaciones concretas."</textarea>
+<textarea class="prompt-text" id="pt-5">"Este es el tipo de contenido digital que consumen mis estudiantes universitarios de [carrera, año]. ¿Qué estructuras narrativas, formatos y lógicas de comunicación usa este contenido? ¿Cómo podría construir puentes entre este lenguaje y mi asignatura de [tema] sin perder el rigor académico?"</textarea>
+<textarea class="prompt-text" id="pt-6">"Estas son dos aulas universitarias con disposiciones distintas. ¿Qué tipo de aprendizaje está favoreciendo cada una? ¿Qué rol tiene el docente en cada espacio? ¿Qué está obstaculizando el aprendizaje en cada caso, aunque no sea evidente a primera vista?"</textarea>
+
+<script>
+  let iaActual = 'claude';
+
+  const instrucciones = {
+    claude:  {
+      single: 'Abre Claude (claude.ai), crea una nueva conversación y sube la imagen directamente al chat.',
+      double: 'Abre Claude (claude.ai), crea una nueva conversación y sube ambas imágenes en el mismo mensaje.'
+    },
+    chatgpt: {
+      single: 'Abre ChatGPT, asegúrate de usar GPT-4o y sube la imagen usando el ícono de adjuntar.',
+      double: 'Abre ChatGPT con GPT-4o y sube ambas imágenes en el mismo mensaje usando el ícono de adjuntar.'
+    },
+    gemini:  {
+      single: 'Abre Gemini (gemini.google.com) y sube la imagen usando el ícono de adjuntar imagen.',
+      double: 'Abre Gemini (gemini.google.com) y sube ambas imágenes usando el ícono de adjuntar.'
+    }
+  };
+
+  function setIA(ia) {
+    iaActual = ia;
+    document.querySelectorAll('.ia-btn').forEach(b => b.classList.remove('ia-active'));
+    event.target.classList.add('ia-active');
+    actualizarInstrucciones();
+  }
+
+  function actualizarInstrucciones() {
+    for (let i = 1; i <= 6; i++) {
+      const el = document.getElementById('p2-' + i);
+      if (el) {
+        el.textContent = (i === 6)
+          ? instrucciones[iaActual].double
+          : instrucciones[iaActual].single;
+      }
+    }
+  }
+
+  function show(n) {
+    document.getElementById('panel-empty').style.display = 'none';
+    document.getElementById('ia-selector').classList.add('visible');
+    document.querySelectorAll('.node').forEach(nd => nd.classList.remove('active'));
+    document.querySelectorAll('.panel-content').forEach(pc => pc.classList.remove('visible'));
+    document.getElementById('node-' + n).classList.add('active');
+    document.getElementById('pc-' + n).classList.add('visible');
+    actualizarInstrucciones();
+  }
+
+  function copiar(n) {
+    const textarea = document.getElementById('pt-' + n);
+    const btn = document.querySelector('#pc-' + n + ' .btn-prompt');
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(textarea.value.trim())
+        .then(() => confirmarCopia(btn))
+        .catch(() => copiarFallback(textarea, btn));
+    } else {
+      copiarFallback(textarea, btn);
+    }
+  }
+
+  function copiarFallback(textarea, btn) {
+    textarea.style.display = 'block';
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    try {
+      document.execCommand('copy');
+      confirmarCopia(btn);
+    } catch(e) {
+      const win = window.open('', '_blank', 'width=600,height=400');
+      win.document.write('<html><body style="background:#111;color:#F5F0E8;font-family:Arial;padding:24px;"><h3 style="color:#E8490F;margin-bottom:16px;">Selecciona todo y copia (Ctrl+A, Ctrl+C)</h3><textarea style="width:100%;height:300px;background:#1A1A1A;color:#F5F0E8;border:1px solid #E8490F;padding:12px;font-size:13px;">' + textarea.value.trim() + '</textarea></body></html>');
+    }
+    textarea.style.display = 'none';
+  }
+
+  function confirmarCopia(btn) {
+    const original = btn.textContent;
+    btn.textContent = '¡Copiado! Pégalo junto a tu imagen';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 2500);
+  }
+</script>
+</body>
+</html>
