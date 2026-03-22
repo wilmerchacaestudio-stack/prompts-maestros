@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Herramientas · Investigación Académica 2026</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #111111;
+    color: #F5F0E8;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .wrapper {
+    width: 100%;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+
+  /* ── DIAGRAMA ── */
+  .diagram-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .diagram {
+    position: relative;
+    width: 460px;
+    height: 460px;
+  }
+
+  /* círculo guía */
+  .diagram::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 340px; height: 340px;
+    border-radius: 50%;
+    border: 1px solid rgba(232,73,15,0.15);
+  }
+
+  /* CENTRO */
+  .center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: #1A1A1A;
+    border: 2px solid #E8490F;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 10;
+    box-shadow: 0 0 32px rgba(232,73,15,0.15);
+    padding: 12px;
+  }
+
+  .center-title {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #F5F0E8;
+    line-height: 1.2;
+  }
+
+  .center-sub {
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #E8490F;
+    margin-top: 5px;
+    line-height: 1.4;
+  }
+
+  /* NODOS — 8 en octágono radio 170px desde centro (230,230) */
+  /* θ: -90, -45, 0, 45, 90, 135, 180, 225 */
+  /* top = 230 + 170*sin(θ) - 36; left = 230 + 170*cos(θ) - 36 */
+  .node {
+    position: absolute;
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: #1E1E1E;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    z-index: 5;
+    padding: 7px;
+  }
+
+  .node:hover, .node.active {
+    background: #E8490F;
+    border-color: #E8490F;
+    transform: scale(1.12);
+    box-shadow: 0 0 20px rgba(232,73,15,0.5);
+  }
+
+  .node span {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    line-height: 1.25;
+    text-transform: uppercase;
+    color: #F5F0E8;
+  }
+
+  .node-num {
+    position: absolute;
+    top: -5px; right: -5px;
+    width: 16px; height: 16px;
+    background: #E8490F;
+    border-radius: 50%;
+    font-size: 7px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: background 0.25s;
+  }
+
+  .node.active .node-num,
+  .node:hover .node-num { background: white; color: #E8490F; }
+
+  /* 8 posiciones octagonales */
+  /* n1: -90° top=24,  left=194  */
+  .n1 { top:  24px; left: 194px; }
+  /* n2: -45° top=74,  left=314  */
+  .n2 { top:  74px; left: 314px; }
+  /* n3:   0° top=194, left=364  */
+  .n3 { top: 194px; left: 364px; }
+  /* n4:  45° top=314, left=314  */
+  .n4 { top: 314px; left: 314px; }
+  /* n5:  90° top=364, left=194  */
+  .n5 { top: 364px; left: 194px; }
+  /* n6: 135° top=314, left: 74  */
+  .n6 { top: 314px; left:  74px; }
+  /* n7: 180° top=194, left: 24  */
+  .n7 { top: 194px; left:  24px; }
+  /* n8: 225° top= 74, left: 74  */
+  .n8 { top:  74px; left:  74px; }
+
+  /* ── PANEL ── */
+  .panel {
+    background: #1A1A1A;
+    border: 1px solid rgba(255,255,255,0.08);
+    min-height: 460px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: #E8490F;
+    z-index: 2;
+  }
+
+  /* Estado vacío */
+  .panel-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 14px;
+    height: 460px;
+    opacity: 0.3;
+    padding: 40px;
+  }
+
+  .panel-empty .hint-icon { font-size: 36px; }
+
+  .panel-empty p {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #888;
+    line-height: 1.8;
+  }
+
+  /* Contenido */
+  .panel-content { display: none; flex-direction: column; height: 100%; }
+  .panel-content.visible { display: flex; animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel-header {
+    padding: 28px 32px 20px 36px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .panel-tag {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #E8490F;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tipo-badge {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+  }
+
+  .badge-citas    { color: #7BC47F; background: rgba(123,196,127,0.1); border: 1px solid rgba(123,196,127,0.3); }
+  .badge-semantica{ color: #7BB8FF; background: rgba(123,184,255,0.1); border: 1px solid rgba(123,184,255,0.3); }
+  .badge-empresa  { color: #E8490F; background: rgba(232,73,15,0.1);   border: 1px solid rgba(232,73,15,0.3); }
+
+  .panel-title {
+    font-size: 24px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+    color: #F5F0E8;
+  }
+
+  .panel-body {
+    padding: 20px 32px 24px 36px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .panel-body::-webkit-scrollbar { width: 3px; }
+  .panel-body::-webkit-scrollbar-thumb { background: #E8490F; }
+
+  .panel-desc {
+    font-size: 14px;
+    line-height: 1.75;
+    color: #C0B8AC;
+    margin-bottom: 20px;
+  }
+
+  .panel-desc strong { color: #F5F0E8; }
+
+  .panel-uso {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 0;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    margin-bottom: 20px;
+  }
+
+  .uso-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #555;
+    font-weight: 700;
+    min-width: 80px;
+    padding-top: 1px;
+    flex-shrink: 0;
+  }
+
+  .uso-texto {
+    font-size: 13px;
+    font-weight: 700;
+    color: #E8490F;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Diferenciador */
+  .diferenciador {
+    background: rgba(232,73,15,0.05);
+    border-left: 2px solid #E8490F;
+    padding: 12px 16px;
+  }
+
+  .dif-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #555;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .dif-texto {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #C0B8AC;
+  }
+
+  /* Link herramienta */
+  .panel-link {
+    display: block;
+    text-align: center;
+    margin: 20px 32px 24px 36px;
+    background: #E8490F;
+    color: white;
+    padding: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .panel-link:hover { background: #c93e0d; }
+
+  /* RESPONSIVE */
+  @media (max-width: 800px) {
+    .wrapper { grid-template-columns: 1fr; }
+    .diagram { width: 360px; height: 360px; }
+    .diagram::before { width: 260px; height: 260px; }
+    .node { width: 60px; height: 60px; }
+    .center { width: 100px; height: 100px; }
+    /* reescalar posiciones mobile */
+    .n1 { top:  14px; left: 150px; }
+    .n2 { top:  54px; left: 248px; }
+    .n3 { top: 150px; left: 286px; }
+    .n4 { top: 248px; left: 248px; }
+    .n5 { top: 286px; left: 150px; }
+    .n6 { top: 248px; left:  52px; }
+    .n7 { top: 150px; left:  14px; }
+    .n8 { top:  54px; left:  52px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- DIAGRAMA -->
+  <div class="diagram-area">
+    <div class="diagram">
+
+      <div class="center">
+        <div class="center-title">Investigación<br>académica</div>
+        <div class="center-sub">2026</div>
+      </div>
+
+      <div class="node n1" id="node-1" data-n="1">
+        <div class="node-num">1</div>
+        <span>Scispace</span>
+      </div>
+      <div class="node n2" id="node-2" data-n="2">
+        <div class="node-num">2</div>
+        <span>Connected Papers</span>
+      </div>
+      <div class="node n3" id="node-3" data-n="3">
+        <div class="node-num">3</div>
+        <span>Semantic Scholar</span>
+      </div>
+      <div class="node n4" id="node-4" data-n="4">
+        <div class="node-num">4</div>
+        <span>Research Rabbit</span>
+      </div>
+      <div class="node n5" id="node-5" data-n="5">
+        <div class="node-num">5</div>
+        <span>Consensus</span>
+      </div>
+      <div class="node n6" id="node-6" data-n="6">
+        <div class="node-num">6</div>
+        <span>Elicit</span>
+      </div>
+      <div class="node n7" id="node-7" data-n="7">
+        <div class="node-num">7</div>
+        <span>Litmaps</span>
+      </div>
+      <div class="node n8" id="node-8" data-n="8">
+        <div class="node-num">8</div>
+        <span>Iris.ai</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div class="panel" id="panel">
+
+    <div class="panel-empty" id="panel-empty">
+      <div class="hint-icon">◎</div>
+      <p>Haz clic en cualquier<br>herramienta para ver<br>qué hace y cuándo usarla</p>
+    </div>
+
+    <!-- 1 SCISPACE -->
+    <div class="panel-content" id="pc-1">
+      <div class="panel-header">
+        <div class="panel-tag">01 · Herramienta <span class="tipo-badge badge-semantica">Semántica</span></div>
+        <div class="panel-title">Scispace</div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-uso">
+          <span class="uso-label">Úsala para</span>
+          <span class="uso-texto">Leer y entender artículos complejos</span>
+        </div>
+        <div class="panel-desc">Plataforma todo-en-uno para el ciclo de vida de la investigación. Sube cualquier PDF y hazle preguntas en lenguaje natural: <strong>explica ecuaciones, tablas estadísticas y metodologías</strong> con citas directas del documento. En 2026 incluye biblioteca inteligente que organiza automáticamente tu colección de PDFs en carpetas temáticas.</div>
+        <div class="diferenciador">
+          <div class="dif-label">Diferenciador clave</div>
+          <div class="dif-texto">Más de 100.000 plantillas de revistas. Cambia entre APA, MLA y Vancouver con un clic. El único que cubre desde el descubrimiento hasta la publicación del artículo.</div>
+        </div>
+      </div>
+      <a class="panel-link" href="https://typeset.io" target="_blank">Ir a Scispace →</a>
+    </div>
+
+    <!-- 2 CONNECTED PAPERS -->
+    <div class="panel-content" id="pc-2">
+      <div class="panel-header">
+        <div class="panel-tag">02 · Herramienta <span class="tipo-badge badge-citas">Citas</span></div>
+        <div class="panel-title">Connected Papers</div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-uso">
+          <span class="uso-label">Úsala para</span>
+          <span class="uso-texto">Mapear un campo desconocido rápidamente</span>
+        </div>
+        <div class="panel-desc">Genera un <strong>grafo visual interactivo</strong> a partir de un solo artículo semilla. Muestra qué estudios están relacionados por co-citación y acoplamiento bibliográfico. Los nodos más grandes son los más citados. Los más cercanos al centro son los más similares al artículo semilla.</div>
+        <div class="diferenciador">
+          <div class="dif-label">Diferenciador clave</div>
+          <div class="dif-texto">No necesitas leer el artículo antes de usarlo. Solo el título o DOI. En 30 segundos tienes el mapa completo del campo con sus trabajos fundacionales y las revisiones más recientes.</div>
+        </div>
+      </div>
+      <a class="panel-link" href="https://connectedpapers.com" target="_blank">Ir a Connected Papers →</a>
+    </div>
+
+    <!-- 3 SEMANTIC SCHOLAR -->
+    <div class="panel-content" id="pc-3">
+      <div class="panel-header">
+        <div class="panel-tag">03 · Herramienta <span class="tipo-badge badge-semantica">Semántica</span></div>
+        <div class="panel-title">Semantic Scholar</div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-uso">
+          <span class="uso-label">Úsala para</span>
+          <span class="uso-texto">Búsqueda amplia con resúmenes automáticos</span>
+        </div>
+        <div class="panel-desc">Base de datos con más de <strong>220 millones de artículos</strong> de todas las disciplinas. Genera resúmenes TLDR de una sola oración por artículo. Su Semantic Reader superpone definiciones de términos, fórmulas matemáticas y citas directamente sobre el PDF sin necesidad de cambiar de pestaña.</div>
+        <div class="diferenciador">
+          <div class="dif-label">Diferenciador clave</div>
+          <div class="dif-texto">Distingue entre citas ordinarias y "Citas Altamente Influyentes", donde el trabajo citado tiene un impacto demostrable en la metodología del nuevo estudio. Acceso completamente gratuito.</div>
+        </div>
+      </div>
+      <a class="panel-link" href="https://semanticscholar.org" target="_blank">Ir a Semantic Scholar →</a>
+    </div>
+
+    <!-- 4 RESEARCH RABBIT -->
+    <div class="panel-content" id="pc-4">
+      <div class="panel-header">
+        <div class="panel-tag">04 · Herramienta <span class="tipo-badge badge-citas">Citas</span></div>
+        <div class="panel-title">Research Rabbit</div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-uso">
+          <span class="uso-label">Úsala para</span>
+          <span class="uso-texto">Explorar un tema sin saber por dónde empezar</span>
+        </div>
+        <div class="panel-desc">Conocido como el "Tinder para artículos". Permite una <strong>exploración por "agujeros de conejo"</strong>: saltar de un artículo a sus relacionados de forma infinita. Rastrea el camino de búsqueda para poder volver a pasos anteriores. Mapea también redes de autores y colaboradores, no solo de artículos.</div>
+        <div class="diferenciador">
+          <div class="dif-label">Diferenciador clave</div>
+          <div class="dif-texto">La capacidad de rastrear el camino de exploración y volver a él es única. Ideal cuando no sabes exactamente qué buscas pero reconoces lo relevante cuando lo encuentras.</div>
+        </div>
+      </div>
+      <a class="panel-link" href="https://researchrabbit.ai" target="_blank">Ir a Research Rabbit →</a>
+    </div>
+
+    <!-- 5 CONSENSUS -->
+    <div class="panel-content" id="pc-5">
+      <div class="panel-header">
+        <div class="panel-tag">05 · Herramienta <span class="tipo-badge badge-semantica">Semántica</span></div>
+        <div class="panel-title">Consensus</div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-uso">
+          <span class="uso-label">Úsala para</span>
+          <span class="uso-texto">Verificar si hay consenso científico sobre un tema</span>
+        </div>
+        <div class="panel-desc">Responde preguntas que requieren validación científica. Su <strong>"Consensus Meter"</strong> muestra visualmente qué porcentaje de artículos apoya, refuta o es neutral ante una afirmación. Su Scholar Agent ejecuta búsquedas multietapa y organiza los resultados por subtemas estructurados.</div>
+        <div class="diferenciador">
+          <div class="dif-label">Diferenciador clave</div>
+          <div class="dif-texto">Ideal para docentes que quieren presentar un tema a sus estudiantes con respaldo científico cuantificado. "¿Qué porcentaje de la literatura apoya esta afirmación?" es una pregunta que solo Consensus puede responder visualmente.</div>
+        </div>
+      </div>
+      <a class="panel-link" href="https://consensus.app" target="_blank">Ir a Consensus →</a>
+    </div>
+
+    <!-- 6 ELICIT -->
+    <div class="panel-content" id="pc-6">
+      <div class="panel-header">
+        <div class="panel-tag">06 · Herramienta <span class="tipo-badge badge-semantica">Semántica</span></div>
+        <div class="panel-title">Elicit</div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-uso">
+          <span class="uso-label">Úsala para</span>
+          <span class="uso-texto">Extraer datos estructurados de muchos artículos</span>
+        </div>
+        <div class="panel-desc">Especializado en <strong>revisiones sistemáticas y meta-análisis</strong>. Analiza hasta 1.000 artículos simultáneamente extrayendo datos estructurados: tamaño de muestra, intervención utilizada y resultados obtenidos. Crea columnas personalizadas donde la IA responde preguntas específicas sobre cada artículo en una tabla comparativa.</div>
+        <div class="diferenciador">
+          <div class="dif-label">Diferenciador clave</div>
+          <div class="dif-texto">Las citas a nivel de frase (no solo de artículo) reducen significativamente el riesgo de alucinaciones. Es la herramienta más precisa para extracción de datos cuando necesitas comparar metodologías entre muchos estudios.</div>
+        </div>
+      </div>
+      <a class="panel-link" href="https://elicit.com" target="_blank">Ir a Elicit →</a>
+    </div>
+
+    <!-- 7 LITMAPS -->
+    <div class="panel-content" id="pc-7">
+      <div class="panel-header">
+        <div class="panel-tag">07 · Herramienta <span class="tipo-badge badge-citas">Citas</span></div>
+        <div class="panel-title">Litmaps</div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-uso">
+          <span class="uso-label">Úsala para</span>
+          <span class="uso-texto">Rastrear la evolución histórica de un tema</span>
+        </div>
+        <div class="panel-desc">Visualización <strong>cronológica de redes de citas</strong>: eje X = año de publicación, eje Y = número de citas. Muestra cómo ha evolucionado un campo a lo largo del tiempo y cuáles son los artículos semilla que generaron nuevas ramas de investigación. Integra con ResearchRabbit desde 2025.</div>
+        <div class="diferenciador">
+          <div class="dif-label">Diferenciador clave</div>
+          <div class="dif-texto">Su función de Monitoreo envía alertas automáticas cuando se publican nuevos artículos que encajan en tu mapa de investigación. Ideal para mantenerte actualizado sin buscar activamente.</div>
+        </div>
+      </div>
+      <a class="panel-link" href="https://litmaps.com" target="_blank">Ir a Litmaps →</a>
+    </div>
+
+    <!-- 8 IRIS.AI -->
+    <div class="panel-content" id="pc-8">
+      <div class="panel-header">
+        <div class="panel-tag">08 · Herramienta <span class="tipo-badge badge-empresa">Empresarial</span></div>
+        <div class="panel-title">Iris.ai</div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-uso">
+          <span class="uso-label">Úsala para</span>
+          <span class="uso-texto">Investigación institucional con privacidad total</span>
+        </div>
+        <div class="panel-desc">Solución empresarial de <strong>RAG Agéntico</strong> para organizaciones que manejan datos complejos y confidenciales. Procesa patentes, literatura técnica y documentos internos en volúmenes masivos. Puede ejecutarse en entornos locales o nubes privadas, garantizando que los datos nunca salgan del perímetro de la organización.</div>
+        <div class="diferenciador">
+          <div class="dif-label">Diferenciador clave</div>
+          <div class="dif-texto">La única herramienta de este ecosistema diseñada para instituciones con requisitos estrictos de privacidad. Ofrece un modelo de co-creación de 30 a 90 días para integrar agentes de IA en el flujo de trabajo institucional.</div>
+        </div>
+      </div>
+      <a class="panel-link" href="https://iris.ai" target="_blank">Ir a Iris.ai →</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  function init() {
+    var nodes = document.querySelectorAll('.node[data-n]');
+    nodes.forEach(function(node) {
+      node.addEventListener('click', function() {
+        var n = this.getAttribute('data-n');
+        var empty = document.getElementById('panel-empty');
+        if (empty) empty.style.display = 'none';
+        document.querySelectorAll('.node').forEach(function(nd) { nd.classList.remove('active'); });
+        document.querySelectorAll('.panel-content').forEach(function(pc) { pc.classList.remove('visible'); });
+        document.getElementById('node-' + n).classList.add('active');
+        document.getElementById('pc-' + n).classList.add('visible');
+      });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
