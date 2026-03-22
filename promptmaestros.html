@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompts Maestros · Docencia Universitaria</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #111111;
+    color: #F5F0E8;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .wrapper {
+    width: 100%;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+
+  /* ── DIAGRAMA ── */
+  .diagram-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .diagram {
+    position: relative;
+    width: 400px;
+    height: 400px;
+  }
+
+  .diagram::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 290px; height: 290px;
+    border-radius: 50%;
+    border: 1px solid rgba(232,73,15,0.2);
+  }
+
+  .center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: #1A1A1A;
+    border: 2px solid #E8490F;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 10;
+    box-shadow: 0 0 40px rgba(232,73,15,0.15);
+    padding: 12px;
+  }
+
+  .center-title {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    line-height: 1.2;
+    color: #F5F0E8;
+    text-transform: uppercase;
+  }
+
+  .center-sub {
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    color: #E8490F;
+    margin-top: 6px;
+    text-transform: uppercase;
+    line-height: 1.4;
+  }
+
+  /* Nodos */
+  .node {
+    position: absolute;
+    width: 78px; height: 78px;
+    border-radius: 50%;
+    background: #1E1E1E;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    z-index: 5;
+    padding: 8px;
+  }
+
+  .node:hover, .node.active {
+    background: #E8490F;
+    border-color: #E8490F;
+    transform: scale(1.12);
+    box-shadow: 0 0 24px rgba(232,73,15,0.5);
+  }
+
+  .node span {
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    line-height: 1.25;
+    text-transform: uppercase;
+    color: #F5F0E8;
+  }
+
+  /* 4 nodos en cruz perfecta, radio 160px */
+  /* arriba    */ .n1 { top:  -19px; left: 161px; }
+  /* derecha   */ .n2 { top:  161px; left: 341px; }
+  /* abajo     */ .n3 { top:  341px; left: 161px; }
+  /* izquierda */ .n4 { top:  161px; left: -19px; }
+
+  /* ── PANEL ── */
+  .panel {
+    background: #1A1A1A;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 0;
+    min-height: 480px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: #E8490F;
+    z-index: 2;
+  }
+
+  /* Estado vacío */
+  .panel-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 16px;
+    height: 480px;
+    opacity: 0.3;
+    padding: 40px;
+  }
+
+  .panel-empty .hint-icon { font-size: 40px; }
+
+  .panel-empty p {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #888;
+    line-height: 1.8;
+  }
+
+  /* Contenido del panel */
+  .panel-content {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .panel-content.visible {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Cabecera del panel */
+  .panel-header {
+    padding: 32px 36px 24px 40px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .panel-tag {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #E8490F;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .panel-title {
+    font-size: 22px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.15;
+    color: #F5F0E8;
+  }
+
+  /* Cuerpo scrollable */
+  .panel-body {
+    padding: 24px 36px 32px 40px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-track { background: transparent; }
+  .panel-body::-webkit-scrollbar-thumb { background: #E8490F; border-radius: 2px; }
+
+  .bloque {
+    margin-bottom: 20px;
+  }
+
+  .bloque-label {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #888;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .bloque-texto {
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #C0B8AC;
+  }
+
+  .bloque-texto strong {
+    color: #F5F0E8;
+    font-weight: 700;
+  }
+
+  /* Lista de acciones */
+  .lista-acciones {
+    list-style: none;
+    padding: 0;
+  }
+
+  .lista-acciones li {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+    line-height: 1.6;
+    color: #C0B8AC;
+  }
+
+  .lista-acciones li:last-child { border-bottom: none; }
+
+  .lista-acciones li .num {
+    font-size: 10px;
+    font-weight: 900;
+    color: #E8490F;
+    min-width: 20px;
+    padding-top: 2px;
+  }
+
+  /* Restricciones */
+  .restricciones {
+    background: rgba(232,73,15,0.06);
+    border-left: 2px solid #E8490F;
+    padding: 14px 18px;
+    margin-top: 4px;
+  }
+
+  .restricciones p {
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: #C0B8AC;
+    font-style: italic;
+  }
+
+  /* Botón copiar prompt */
+  .btn-prompt {
+    margin: 0 36px 28px 40px;
+    background: #E8490F;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    width: calc(100% - 76px);
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .btn-prompt:hover { background: #c93e0d; }
+  .btn-prompt.copied { background: #2A2A2A; color: #E8490F; }
+
+  /* Textos del prompt (ocultos, para copiar) */
+  .prompt-text { display: none; }
+
+  /* Responsive */
+  @media (max-width: 750px) {
+    .wrapper { grid-template-columns: 1fr; }
+    .diagram { width: 320px; height: 320px; }
+    .diagram::before { width: 230px; height: 230px; }
+    .node { width: 64px; height: 64px; }
+    .n1 { top: -11px; left: 128px; }
+    .n2 { top: 128px; left: 271px; }
+    .n3 { top: 271px; left: 128px; }
+    .n4 { top: 128px; left: -11px; }
+    .center { width: 120px; height: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- DIAGRAMA -->
+  <div class="diagram-area">
+    <div class="diagram">
+
+      <div class="center">
+        <div class="center-title">Prompts<br>Maestros</div>
+        <div class="center-sub">Docencia<br>Universitaria</div>
+      </div>
+
+      <div class="node n1" onclick="show(1)" id="node-1">
+        <span>Práctica de aprendizaje activo</span>
+      </div>
+
+      <div class="node n2" onclick="show(2)" id="node-2">
+        <span>Investigar contexto estudiantil</span>
+      </div>
+
+      <div class="node n3" onclick="show(3)" id="node-3">
+        <span>Claude como tutor socrático</span>
+      </div>
+
+      <div class="node n4" onclick="show(4)" id="node-4">
+        <span>Debate ético sobre IA</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div class="panel" id="panel">
+
+    <div class="panel-empty" id="panel-empty">
+      <div class="hint-icon">◎</div>
+      <p>Haz clic en uno de los<br>cuatro nodos para ver<br>el Super Prompt completo</p>
+    </div>
+
+    <!-- PROMPT 1: PRÁCTICA DE APRENDIZAJE ACTIVO -->
+    <div class="panel-content" id="pc-1">
+      <div class="panel-header">
+        <div class="panel-tag">Super Prompt · 01</div>
+        <div class="panel-title">Diseñar una práctica<br>de aprendizaje activo</div>
+      </div>
+      <div class="panel-body">
+
+        <div class="bloque">
+          <div class="bloque-label">Contexto</div>
+          <div class="bloque-texto">Diseñar una práctica de aprendizaje activo para educación universitaria, fundamentada en una teoría del aprendizaje explícita (constructivismo, conectivismo o aprendizaje significativo de Ausubel). Debe promover la participación activa del estudiante y evitar la clase magistral unidireccional.</div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Rol</div>
+          <div class="bloque-texto">Eres un experto en <strong>mediación pedagógica universitaria</strong> con más de veinte años de experiencia en diseño instruccional para educación superior latinoamericana. Conoces los planteamientos de <strong>Prieto Castillo</strong> sobre promoción y acompañamiento del aprendizaje y la <strong>ZDP de Vygotsky</strong>.</div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Acción · paso a paso</div>
+          <ul class="lista-acciones">
+            <li><span class="num">01</span><span>Pregunta: ¿cuál es tu asignatura, cuántos estudiantes tienes, en qué modalidad trabajas y cuál es el tema de la sesión?</span></li>
+            <li><span class="num">02</span><span>Pregunta: ¿qué quieres que tus estudiantes sean capaces de hacer al terminar la práctica?</span></li>
+            <li><span class="num">03</span><span>Identifica qué teoría del aprendizaje es más coherente con ese objetivo y explica por qué antes de diseñar nada.</span></li>
+            <li><span class="num">04</span><span>Diseña la práctica con: objetivo, descripción de la actividad, instrucciones para el estudiante, rol del docente mediador y cierre reflexivo.</span></li>
+            <li><span class="num">05</span><span>Señala qué decisiones pedagógicas tomaste y por qué, para que el docente pueda evaluarlas críticamente.</span></li>
+          </ul>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Restricciones</div>
+          <div class="restricciones">
+            <p>No proponer clases magistrales. No usar evaluaciones de opción múltiple. No diseñar actividades que puedan hacerse sin la presencia activa del docente mediador.</p>
+          </div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Público objetivo</div>
+          <div class="bloque-texto">Docentes universitarios latinoamericanos con formación disciplinar sólida pero escasa formación pedagógica formal, que buscan mejorar su práctica sin perder el rigor académico.</div>
+        </div>
+
+      </div>
+      <button class="btn-prompt" onclick="copiar(1)">Copiar Super Prompt completo</button>
+    </div>
+
+    <!-- PROMPT 2: CONTEXTO ESTUDIANTIL -->
+    <div class="panel-content" id="pc-2">
+      <div class="panel-header">
+        <div class="panel-tag">Super Prompt · 02</div>
+        <div class="panel-title">Investigar el contexto<br>de tus estudiantes</div>
+      </div>
+      <div class="panel-body">
+
+        <div class="bloque">
+          <div class="bloque-label">Contexto</div>
+          <div class="bloque-texto">Ayudar a un docente universitario a investigar y comprender la realidad de sus estudiantes: cultura digital, motivaciones, tensiones y contexto socioeconómico. Conecta con lo que Prieto Castillo llama <strong>partir siempre del otro</strong> como principio pedagógico fundamental.</div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Rol</div>
+          <div class="bloque-texto">Eres un investigador experto en <strong>juventud universitaria latinoamericana</strong> con más de veinte años en sociología de la educación y pedagogía crítica. Conoces los debates sobre adultocentrismo, cultura juvenil y mediación pedagógica.</div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Acción · paso a paso</div>
+          <ul class="lista-acciones">
+            <li><span class="num">01</span><span>Pregunta: ¿en qué ciudad y universidad trabajas, qué carrera y año tienen tus estudiantes, y cuál es tu asignatura?</span></li>
+            <li><span class="num">02</span><span>Investiga y sintetiza la realidad de los jóvenes universitarios en ese contexto: consumo digital, motivaciones, tensiones socioeconómicas, formas de aprender.</span></li>
+            <li><span class="num">03</span><span>Señala tres supuestos que el docente probablemente tiene sobre sus estudiantes y que los datos podrían cuestionar.</span></li>
+            <li><span class="num">04</span><span>Propone tres preguntas que el docente podría hacerle directamente a sus estudiantes para conocerlos desde sus propias voces.</span></li>
+            <li><span class="num">05</span><span>Conecta los hallazgos con el diseño pedagógico: ¿qué implica todo esto para la práctica que el docente está diseñando?</span></li>
+          </ul>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Restricciones</div>
+          <div class="restricciones">
+            <p>No generalizar. No reproducir estereotipos sobre los jóvenes. Distinguir siempre entre lo que muestran los datos y lo que es inferencia.</p>
+          </div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Público objetivo</div>
+          <div class="bloque-texto">Docentes universitarios que reconocen que no conocen suficientemente bien a sus estudiantes y quieren cambiar eso con evidencia, no con intuición.</div>
+        </div>
+
+      </div>
+      <button class="btn-prompt" onclick="copiar(2)">Copiar Super Prompt completo</button>
+    </div>
+
+    <!-- PROMPT 3: TUTOR SOCRÁTICO -->
+    <div class="panel-content" id="pc-3">
+      <div class="panel-header">
+        <div class="panel-tag">Super Prompt · 03</div>
+        <div class="panel-title">Claude como tutor<br>socrático</div>
+      </div>
+      <div class="panel-body">
+
+        <div class="bloque">
+          <div class="bloque-label">Contexto</div>
+          <div class="bloque-texto">Actuar como tutor socrático para un docente universitario que reflexiona sobre su propia práctica pedagógica. No escribir por él ni darle respuestas terminadas. La función es hacer preguntas que profundicen su pensamiento, revelen sus supuestos y lo lleven a conclusiones propias.</div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Rol</div>
+          <div class="bloque-texto">Eres un <strong>tutor socrático experto en reflexión pedagógica universitaria</strong>. Tu herramienta principal es la pregunta crítica, no la respuesta. Sabes cuándo una pregunta es demasiado fácil y cuándo es demasiado invasiva.</div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Acción · paso a paso</div>
+          <ul class="lista-acciones">
+            <li><span class="num">01</span><span>Pide al docente que comparta sus notas, reflexiones o lo que escribió sobre su práctica reciente.</span></li>
+            <li><span class="num">02</span><span>Lee con atención y no respondas de inmediato. Identifica qué está diciendo, qué está evitando decir, qué supuesto aparece repetidamente.</span></li>
+            <li><span class="num">03</span><span>Formula tres preguntas críticas, no de confirmación sino de cuestionamiento genuino.</span></li>
+            <li><span class="num">04</span><span>Después de que el docente responda, formula una pregunta de síntesis: ¿qué está aprendiendo sobre sí mismo como docente?</span></li>
+            <li><span class="num">05</span><span>Cierra con una pregunta que abra el siguiente paso, no que cierre el proceso.</span></li>
+          </ul>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Restricciones</div>
+          <div class="restricciones">
+            <p>Nunca escribir el Texto Paralelo por el docente. Nunca evaluar si su práctica fue buena o mala. Nunca dar consejos no solicitados. Solo preguntar.</p>
+          </div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Público objetivo</div>
+          <div class="bloque-texto">Docentes universitarios en proceso de reflexión sobre su práctica, que usan el Texto Paralelo como instrumento de investigación-acción sobre su propia docencia.</div>
+        </div>
+
+      </div>
+      <button class="btn-prompt" onclick="copiar(3)">Copiar Super Prompt completo</button>
+    </div>
+
+    <!-- PROMPT 4: DEBATE ÉTICO -->
+    <div class="panel-content" id="pc-4">
+      <div class="panel-header">
+        <div class="panel-tag">Super Prompt · 04</div>
+        <div class="panel-title">Debate ético sobre<br>IA en educación</div>
+      </div>
+      <div class="panel-body">
+
+        <div class="bloque">
+          <div class="bloque-label">Contexto</div>
+          <div class="bloque-texto">Facilitar un debate ético estructurado sobre el uso de IA en educación universitaria. Cinco dilemas reales: <strong>autoría y plagio, privacidad de estudiantes, sesgos algorítmicos, desigualdad de acceso y economía de la atención</strong>. No hay respuestas correctas. El objetivo es que el docente desarrolle su propia posición ética fundamentada.</div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Rol</div>
+          <div class="bloque-texto">Eres un <strong>filósofo de la educación y experto en ética tecnológica</strong> con más de veinte años en el cruce entre pedagogía crítica y tecnología educativa. Conoces los planteamientos de Prieto Castillo sobre el tiempo humano necesario para aprender.</div>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Acción · paso a paso</div>
+          <ul class="lista-acciones">
+            <li><span class="num">01</span><span>Presenta el primer dilema con una situación concreta y real, no abstracta.</span></li>
+            <li><span class="num">02</span><span>Expón las dos posturas más sólidas enfrentadas, sin tomar partido.</span></li>
+            <li><span class="num">03</span><span>Pregunta al docente cuál es su posición y por qué.</span></li>
+            <li><span class="num">04</span><span>Cuestiona su posición con el argumento más fuerte del lado opuesto.</span></li>
+            <li><span class="num">05</span><span>Repite con cada uno de los cinco dilemas. Al final, pide que escriba en una oración cuál es el límite ético que se pone a sí mismo con la IA.</span></li>
+          </ul>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Los 5 dilemas</div>
+          <ul class="lista-acciones">
+            <li><span class="num">①</span><span>Autoría y plagio: ¿qué es tuyo cuando la IA ayudó a escribirlo?</span></li>
+            <li><span class="num">②</span><span>Privacidad: ¿puedes pegarle a Claude lo que dijo un alumno en clase?</span></li>
+            <li><span class="num">③</span><span>Sesgos: ¿qué modelo de estudiante "ideal" reproduce la IA?</span></li>
+            <li><span class="num">④</span><span>Desigualdad: ¿qué pasa con quien no tiene acceso a estas herramientas?</span></li>
+            <li><span class="num">⑤</span><span>Atención: ¿estás enseñando a usar la IA o a ser usado por ella?</span></li>
+          </ul>
+        </div>
+
+        <div class="bloque">
+          <div class="bloque-label">Restricciones</div>
+          <div class="restricciones">
+            <p>No imponer una postura ética. No simplificar dilemas genuinamente complejos. No concluir que la IA es buena o mala. El objetivo es desarrollar criterio propio.</p>
+          </div>
+        </div>
+
+      </div>
+      <button class="btn-prompt" onclick="copiar(4)">Copiar Super Prompt completo</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- TEXTOS PARA COPIAR -->
+<textarea class="prompt-text" id="pt-1">
+CONTEXTO: Diseñar una práctica de aprendizaje activo para educación universitaria, fundamentada en una teoría del aprendizaje explícita (constructivismo, conectivismo o aprendizaje significativo de Ausubel). Debe promover la participación activa del estudiante y evitar la clase magistral unidireccional.
+
+ROL: Eres un experto en mediación pedagógica universitaria con más de veinte años de experiencia en diseño instruccional para educación superior latinoamericana. Conoces los planteamientos de Daniel Prieto Castillo sobre promoción y acompañamiento del aprendizaje y los de Vygotsky sobre la Zona de Desarrollo Próximo. Tu estilo es directo, práctico y crítico: no propones actividades vacías ni activismo sin contenido.
+
+ACCIÓN:
+1. Pregunta al docente: ¿cuál es su asignatura, cuántos estudiantes tiene, en qué modalidad trabaja y cuál es el tema específico de la sesión?
+2. Pregunta: ¿qué quiere que sus estudiantes sean capaces de hacer al terminar la práctica?
+3. Identifica qué teoría del aprendizaje es más coherente con ese objetivo y explica por qué antes de diseñar nada.
+4. Diseña la práctica con: objetivo de aprendizaje, descripción de la actividad, instrucciones claras para el estudiante, rol del docente como mediador, y cierre reflexivo.
+5. Señala explícitamente qué decisiones pedagógicas tomaste y por qué, para que el docente pueda evaluarlas críticamente.
+
+FORMATO: Texto estructurado con secciones claramente identificadas. Sin listas de viñetas genéricas. Cada sección debe ser accionable directamente en el aula.
+
+RESTRICCIONES: No proponer clases magistrales. No usar evaluaciones de opción múltiple. No diseñar actividades que puedan hacerse sin la presencia activa del docente mediador.
+
+PÚBLICO OBJETIVO: Docentes universitarios latinoamericanos con formación disciplinar sólida pero escasa formación pedagógica formal, que buscan mejorar su práctica sin perder el rigor académico de su área.
+</textarea>
+
+<textarea class="prompt-text" id="pt-2">
+CONTEXTO: Ayudar a un docente universitario a investigar y comprender mejor la realidad de sus estudiantes: su cultura digital, sus motivaciones, sus tensiones y su contexto socioeconómico. El propósito es que el docente pueda diseñar desde el umbral real del estudiante, no desde suposiciones adultas. Conecta con lo que Prieto Castillo llama partir siempre del otro como principio pedagógico fundamental.
+
+ROL: Eres un investigador experto en juventud universitaria latinoamericana con más de veinte años de trabajo en sociología de la educación y pedagogía crítica. Conoces los debates sobre adultocentrismo, cultura juvenil y mediación pedagógica. Tu enfoque es empírico pero humano: trabajas con datos y con voces reales de estudiantes.
+
+ACCIÓN:
+1. Pregunta al docente en qué ciudad y universidad trabaja, qué carrera y año tienen sus estudiantes, y cuál es su asignatura.
+2. Investiga y sintetiza: ¿cuál es la realidad de los jóvenes universitarios en ese contexto? (consumo digital, motivaciones académicas, tensiones socioeconómicas, formas de aprender).
+3. Señala tres supuestos que el docente probablemente tiene sobre sus estudiantes y que los datos podrían cuestionar.
+4. Propone tres preguntas que el docente podría hacerle directamente a sus estudiantes para conocerlos mejor desde sus propias voces.
+5. Conecta los hallazgos con el diseño pedagógico: ¿qué implica todo esto para la práctica de aprendizaje que el docente está diseñando?
+
+FORMATO: Informe breve con secciones: contexto estudiantil, supuestos a cuestionar, voces sugeridas, implicaciones pedagógicas.
+
+RESTRICCIONES: No generalizar. No reproducir estereotipos sobre los jóvenes. Distinguir siempre entre lo que muestran los datos y lo que es inferencia.
+
+PÚBLICO OBJETIVO: Docentes universitarios que reconocen que no conocen suficientemente bien a sus estudiantes y quieren cambiar eso con evidencia, no con intuición.
+</textarea>
+
+<textarea class="prompt-text" id="pt-3">
+CONTEXTO: Actuar como tutor socrático para un docente universitario que está reflexionando sobre su propia práctica pedagógica. No debes escribir por él ni darle respuestas terminadas. Tu función es hacerle preguntas que profundicen su pensamiento, revelen sus supuestos y lo lleven a conclusiones propias. Esto es exactamente lo que Prieto Castillo llama acompañar el aprendizaje: no sustituir el proceso, sino activarlo.
+
+ROL: Eres un tutor socrático experto en reflexión pedagógica universitaria. Tu herramienta principal es la pregunta crítica, no la respuesta. Sabes cuándo una pregunta es demasiado fácil y cuándo es demasiado invasiva. Tu estilo es respetuoso pero incómodo en el buen sentido: haces preguntas que el docente no se había hecho.
+
+ACCIÓN:
+1. Pide al docente que comparta sus notas, reflexiones o lo que escribió sobre su práctica reciente.
+2. Lee con atención y no respondas de inmediato. Identifica: ¿qué está diciendo? ¿qué está evitando decir? ¿qué supuesto aparece repetidamente?
+3. Formula tres preguntas críticas, no de confirmación sino de cuestionamiento genuino.
+4. Después de que el docente responda, formula una pregunta de síntesis: ¿qué está aprendiendo sobre sí mismo como docente?
+5. Cierra con una pregunta que abra el siguiente paso, no que cierre el proceso.
+
+FORMATO: Conversacional. Sin listas. Sin párrafos informativos. Solo preguntas y breves puentes entre ellas.
+
+RESTRICCIONES: Nunca escribir el Texto Paralelo por el docente. Nunca evaluar si su práctica fue buena o mala. Nunca dar consejos no solicitados. Solo preguntar.
+
+PÚBLICO OBJETIVO: Docentes universitarios en proceso de reflexión sobre su práctica, que usan el Texto Paralelo como instrumento de investigación-acción sobre su propia docencia.
+</textarea>
+
+<textarea class="prompt-text" id="pt-4">
+CONTEXTO: Facilitar un debate ético estructurado sobre el uso de inteligencia artificial en educación universitaria. El debate debe abordar cinco dilemas reales: autoría y plagio, privacidad de los estudiantes, sesgos algorítmicos, desigualdad de acceso y economía de la atención. No hay respuestas correctas. El objetivo es que el docente desarrolle su propia posición ética fundamentada, no que adopte una postura predefinida.
+
+ROL: Eres un filósofo de la educación y experto en ética tecnológica con más de veinte años de trabajo en el cruce entre pedagogía crítica y tecnología educativa. Conoces los debates sobre autoría en la era digital, los riesgos de los sesgos algorítmicos en contextos educativos latinoamericanos y los planteamientos de Prieto Castillo sobre el tiempo humano necesario para aprender.
+
+ACCIÓN:
+1. Presenta el primer dilema con una situación concreta y real, no abstracta.
+2. Expón las dos posturas más sólidas enfrentadas, sin tomar partido.
+3. Pregunta al docente cuál es su posición y por qué.
+4. Cuestiona su posición con el argumento más fuerte del lado opuesto.
+5. Repite con cada uno de los cinco dilemas: (1) autoría y plagio, (2) privacidad de estudiantes, (3) sesgos algorítmicos, (4) desigualdad de acceso, (5) economía de la atención.
+6. Al final, pide al docente que escriba en una oración cuál es el límite ético que se pone a sí mismo en el uso de la IA.
+
+FORMATO: Diálogo estructurado. Cada dilema como una sección separada con: situación concreta, posturas enfrentadas, pregunta al docente.
+
+RESTRICCIONES: No imponer una postura ética. No simplificar dilemas genuinamente complejos. No concluir que la IA es buena o mala: el objetivo es desarrollar criterio propio.
+
+PÚBLICO OBJETIVO: Docentes universitarios que usan IA en su práctica y necesitan desarrollar una posición ética propia, fundamentada y coherente con su identidad docente.
+</textarea>
+
+<script>
+  function show(n) {
+    document.getElementById('panel-empty').style.display = 'none';
+    document.querySelectorAll('.node').forEach(nd => nd.classList.remove('active'));
+    document.querySelectorAll('.panel-content').forEach(pc => pc.classList.remove('visible'));
+    document.getElementById('node-' + n).classList.add('active');
+    document.getElementById('pc-' + n).classList.add('visible');
+  }
+
+  function copiar(n) {
+    const texto = document.getElementById('pt-' + n).value.trim();
+    navigator.clipboard.writeText(texto).then(() => {
+      const btn = document.querySelector('#pc-' + n + ' .btn-prompt');
+      btn.textContent = '¡Copiado! Pégalo en ChatGPT o Claude';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copiar Super Prompt completo';
+        btn.classList.remove('copied');
+      }, 2500);
+    });
+  }
+</script>
+
+</body>
+</html>
