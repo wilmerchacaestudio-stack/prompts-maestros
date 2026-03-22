@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NotebookLM · Guía Completa</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #111111;
+    color: #F5F0E8;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: #111111;
+    padding: 36px 48px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .hero-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+    padding-bottom: 32px;
+  }
+
+  .hero-tag {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #E8490F;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .hero-title {
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 900;
+    line-height: 0.95;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    color: #F5F0E8;
+    margin-bottom: 16px;
+  }
+
+  .hero-title span { color: #E8490F; }
+
+  .hero-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #C0B8AC;
+    max-width: 100%;
+  }
+
+  .hero-desc strong { color: #F5F0E8; }
+
+  .hero-right {
+    padding-bottom: 0;
+  }
+
+  .concepto-clave {
+    background: rgba(232,73,15,0.08);
+    border-left: 3px solid #E8490F;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+  }
+
+  .concepto-clave p {
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1.6;
+    color: #F5F0E8;
+  }
+
+  .diferencia {
+    background: #1A1A1A;
+    padding: 18px 22px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .diferencia-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+
+  .diferencia p {
+    font-size: 13px;
+    line-height: 1.65;
+    color: #C0B8AC;
+  }
+
+  .diferencia strong { color: #E8490F; }
+
+  /* Responsive hero — colapsa en una columna cuando el espacio es insuficiente */
+  @media (max-width: 860px) {
+    .hero { padding: 28px 24px 0; }
+    .hero-inner { grid-template-columns: 1fr; gap: 24px; }
+  }
+
+  /* ── NAVEGACIÓN PESTAÑAS ── */
+  .nav-tabs {
+    background: #0D0D0D;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding: 0 48px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .nav-tabs::-webkit-scrollbar { height: 3px; }
+  .nav-tabs::-webkit-scrollbar-thumb { background: #E8490F; }
+
+  .tabs-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0;
+  }
+
+  .tab-btn {
+    padding: 16px 24px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tab-btn:hover { color: #C0B8AC; }
+  .tab-btn.active { color: #E8490F; border-bottom-color: #E8490F; }
+
+  /* ── CONTENIDO ── */
+  .content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.visible { display: block; animation: fadeIn 0.25s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Cabecera de cada tab */
+  .tab-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-bottom: 48px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .tab-num {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #E8490F;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .tab-title {
+    font-size: 36px;
+    font-weight: 900;
+    text-transform: uppercase;
+    line-height: 1;
+    color: #F5F0E8;
+    margin-bottom: 20px;
+  }
+
+  .tab-desc {
+    font-size: 14px;
+    line-height: 1.75;
+    color: #C0B8AC;
+  }
+
+  .tab-desc strong { color: #F5F0E8; }
+
+  /* Grid de capacidades */
+  .capacidades {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1px;
+    background: rgba(255,255,255,0.06);
+    margin-bottom: 40px;
+  }
+
+  .cap-item {
+    background: #111111;
+    padding: 24px 20px;
+  }
+
+  .cap-icon {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .cap-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #F5F0E8;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .cap-desc {
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #9A9088;
+  }
+
+  /* Prompt box */
+  .prompt-section {
+    background: #1A1A1A;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 32px;
+    margin-top: 8px;
+    position: relative;
+  }
+
+  .prompt-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: #E8490F;
+  }
+
+  .prompt-label {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #E8490F;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .prompt-box {
+    background: rgba(232,73,15,0.05);
+    border: 1px solid rgba(232,73,15,0.15);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+
+  .prompt-box p {
+    font-size: 13px;
+    font-style: italic;
+    line-height: 1.7;
+    color: #F5F0E8;
+  }
+
+  .btn-copy {
+    background: #E8490F;
+    color: white;
+    border: none;
+    padding: 11px 24px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-copy:hover { background: #c93e0d; }
+  .btn-copy.copied { background: #2A2A2A; color: #E8490F; }
+
+  /* Pasos */
+  .pasos-titulo {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #888;
+    font-weight: 700;
+    margin-bottom: 16px;
+    margin-top: 32px;
+  }
+
+  .pasos { list-style: none; }
+
+  .pasos li {
+    display: flex;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #C0B8AC;
+    align-items: flex-start;
+  }
+
+  .pasos li:last-child { border-bottom: none; }
+
+  .paso-n {
+    font-size: 10px;
+    font-weight: 900;
+    color: #E8490F;
+    min-width: 24px;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Tabla */
+  .tabla-wrap { overflow-x: auto; margin: 24px 0; }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    text-align: left;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #E8490F;
+    padding: 12px 16px;
+    border-bottom: 1px solid #E8490F;
+  }
+
+  tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px;
+    line-height: 1.5;
+    color: #C0B8AC;
+    vertical-align: top;
+  }
+
+  tbody tr:hover td { background: rgba(255,255,255,0.02); }
+  td:first-child { font-weight: 700; color: #F5F0E8; white-space: nowrap; }
+
+  /* Limitaciones */
+  .limitacion-item {
+    background: #1A1A1A;
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 28px 32px;
+    margin-bottom: 1px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  .limit-titulo {
+    font-size: 13px;
+    font-weight: 700;
+    color: #F5F0E8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .limit-badge {
+    display: inline-block;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    margin-top: 8px;
+    font-weight: 700;
+  }
+
+  .badge-alta { background: rgba(232,73,15,0.2); color: #E8490F; }
+  .badge-media { background: rgba(255,200,0,0.15); color: #FFB800; }
+  .badge-baja { background: rgba(100,200,100,0.15); color: #7BC47F; }
+
+  .limit-desc {
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #C0B8AC;
+  }
+
+  .limit-desc strong { color: #F5F0E8; }
+
+  /* Formatos table */
+  .formato-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1px;
+    background: rgba(255,255,255,0.06);
+    margin: 24px 0;
+  }
+
+  .formato-item {
+    background: #111111;
+    padding: 18px 16px;
+    text-align: center;
+  }
+
+  .formato-icon { font-size: 24px; margin-bottom: 8px; }
+  .formato-name { font-size: 12px; font-weight: 700; color: #F5F0E8; margin-bottom: 4px; }
+  .formato-detail { font-size: 11px; color: #888; line-height: 1.4; }
+
+  /* Bloque naranja */
+  .bloque-naranja {
+    background: #E8490F;
+    padding: 28px 32px;
+    margin: 32px 0;
+  }
+
+  .bloque-naranja p {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.55;
+    color: white;
+  }
+
+  .bloque-naranja strong { font-weight: 900; }
+
+  /* Prompt oculto */
+  .pt { display: none; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .nav-tabs { padding: 0 24px; }
+    .content { padding: 32px 24px; }
+    .tab-header { grid-template-columns: 1fr; gap: 24px; }
+    .limitacion-item { grid-template-columns: 1fr; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-tag">Herramienta · Lectura, análisis y síntesis</div>
+      <h1 class="hero-title">Notebook<span>LM</span></h1>
+      <p class="hero-desc">No es un chatbot. No busca en internet. No inventa. <strong>Solo trabaja con lo que tú le das.</strong> Esa limitación es, en realidad, su mayor fortaleza para la docencia universitaria.</p>
+    </div>
+    <div class="hero-right">
+      <div class="concepto-clave">
+        <p>"No importa cuánto sepa la IA de forma general. Lo que importa es qué puede hacer con <em>tus</em> documentos, en <em>tu</em> contexto, para <em>tus</em> estudiantes."</p>
+      </div>
+      <div class="diferencia">
+        <div class="diferencia-label">La diferencia fundamental</div>
+        <p>ChatGPT, Claude y Gemini generan texto a partir de todo lo que aprendieron durante su entrenamiento. NotebookLM opera de forma radicalmente distinta: solo puede responder con base en los documentos que tú cargues. Si no está en tus fuentes, <strong>no lo inventa</strong>. Cada respuesta incluye la cita exacta del documento del que proviene.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAVEGACIÓN -->
+<div class="nav-tabs">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="showTab('fuentes')">01 · Fuentes</button>
+    <button class="tab-btn" onclick="showTab('chat')">02 · Chat y análisis</button>
+    <button class="tab-btn" onclick="showTab('studio')">03 · Studio</button>
+    <button class="tab-btn" onclick="showTab('audio')">04 · Audio Overview</button>
+    <button class="tab-btn" onclick="showTab('estudio')">05 · Herramientas de estudio</button>
+    <button class="tab-btn" onclick="showTab('docencia')">06 · En tu docencia</button>
+    <button class="tab-btn" onclick="showTab('limitaciones')">07 · Limitaciones</button>
+  </div>
+</div>
+
+<!-- CONTENIDO -->
+<div class="content">
+
+  <!-- TAB 1: FUENTES -->
+  <div class="tab-content visible" id="tab-fuentes">
+    <div class="tab-header">
+      <div>
+        <div class="tab-num">01 · Ingesta de fuentes</div>
+        <div class="tab-title">Todo lo que puede leer</div>
+        <div class="tab-desc">NotebookLM puede cargar hasta <strong>50 fuentes por cuaderno</strong> (300 en planes empresariales). Las analiza, indexa y cruza de forma instantánea. En 2026 admite una variedad de formatos que cubre casi cualquier material que uses en clase.</div>
+      </div>
+      <div>
+        <div class="bloque-naranja">
+          <p>La regla de oro: <strong>basura entra, basura sale.</strong> Si los documentos que subes están desactualizados, sesgados o mal redactados, el análisis reflejará esos mismos errores. La calidad del output depende directamente de la calidad de tus fuentes.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="formato-grid">
+      <div class="formato-item"><div class="formato-icon">📄</div><div class="formato-name">PDF</div><div class="formato-detail">Hasta 200MB. Analiza texto y diagramas.</div></div>
+      <div class="formato-item"><div class="formato-icon">📝</div><div class="formato-name">Google Docs</div><div class="formato-detail">Integración nativa. Se actualiza como "documento vivo".</div></div>
+      <div class="formato-item"><div class="formato-icon">📊</div><div class="formato-name">Google Sheets</div><div class="formato-detail">Análisis cualitativo de datos cuantitativos.</div></div>
+      <div class="formato-item"><div class="formato-icon">📋</div><div class="formato-name">Word / TXT</div><div class="formato-detail">Archivos .docx y texto plano.</div></div>
+      <div class="formato-item"><div class="formato-icon">📺</div><div class="formato-name">YouTube</div><div class="formato-detail">Transcripción completa solo pegando el enlace.</div></div>
+      <div class="formato-item"><div class="formato-icon">🎵</div><div class="formato-name">Audio MP3/WAV</div><div class="formato-detail">Convierte voz a texto y analiza semánticamente.</div></div>
+      <div class="formato-item"><div class="formato-icon">🌐</div><div class="formato-name">URLs web</div><div class="formato-detail">Extrae contenido de cualquier página.</div></div>
+      <div class="formato-item"><div class="formato-icon">📚</div><div class="formato-name">EPUB</div><div class="formato-detail">Libros digitales con navegación contextual.</div></div>
+      <div class="formato-item"><div class="formato-icon">🖼️</div><div class="formato-name">Imágenes</div><div class="formato-detail">OCR avanzado: digitaliza notas manuscritas y diagramas.</div></div>
+    </div>
+
+    <div class="pasos-titulo">Cómo cargar tus primeras fuentes</div>
+    <ul class="pasos">
+      <li><span class="paso-n">01</span><span>Ve a <strong>notebooklm.google.com</strong> e inicia sesión con tu cuenta Google.</span></li>
+      <li><span class="paso-n">02</span><span>Crea un nuevo cuaderno. Dale un nombre que identifique el proyecto (ej. "Módulo IA · Maestría MDU").</span></li>
+      <li><span class="paso-n">03</span><span>Haz clic en "Agregar fuente" y sube tus documentos. Puedes subir varios a la vez.</span></li>
+      <li><span class="paso-n">04</span><span>Espera a que el sistema procese e indexe cada archivo. Verás un indicador de progreso por cada fuente.</span></li>
+      <li><span class="paso-n">05</span><span>Una vez procesadas, ya puedes hacer preguntas en el panel de Chat sobre todo el conjunto de fuentes simultáneamente.</span></li>
+    </ul>
+  </div>
+
+  <!-- TAB 2: CHAT -->
+  <div class="tab-content" id="tab-chat">
+    <div class="tab-header">
+      <div>
+        <div class="tab-num">02 · Chat y análisis</div>
+        <div class="tab-title">Dialoga con tus documentos</div>
+        <div class="tab-desc">El panel de Chat es donde ocurre el análisis. Puedes hacer preguntas, pedir comparaciones, solicitar síntesis o generar tablas comparativas. <strong>Cada respuesta cita la fuente exacta</strong> de donde proviene la información.</div>
+      </div>
+      <div>
+        <div class="diferencia">
+          <div class="diferencia-label">Por qué no alucina</div>
+          <p style="font-size:13.5px;line-height:1.7;color:#C0B8AC;">NotebookLM usa una arquitectura llamada RAG (Generación Aumentada por Recuperación) en sistema cerrado. Esto significa que el modelo <strong style="color:#E8490F;">solo puede responder con información de tus fuentes</strong>. Si le preguntas algo que no está en ningún documento cargado, te lo dice. No inventa.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="capacidades">
+      <div class="cap-item"><div class="cap-icon">🔍</div><div class="cap-title">Síntesis cruzada</div><div class="cap-desc">Cruza información entre múltiples documentos y entrega una síntesis integrada con citas de cada fuente.</div></div>
+      <div class="cap-item"><div class="cap-icon">📊</div><div class="cap-title">Tablas comparativas</div><div class="cap-desc">Extrae datos comparativos de documentos distintos y los estructura en tablas exportables.</div></div>
+      <div class="cap-item"><div class="cap-icon">❓</div><div class="cap-title">Preguntas directas</div><div class="cap-desc">Responde preguntas específicas sobre el contenido con referencias exactas al párrafo original.</div></div>
+      <div class="cap-item"><div class="cap-icon">🗺️</div><div class="cap-title">Cronologías</div><div class="cap-desc">Construye líneas de tiempo a partir de eventos mencionados en los documentos.</div></div>
+      <div class="cap-item"><div class="cap-icon">🔬</div><div class="cap-title">Deep Research</div><div class="cap-desc">Navega por cientos de sitios web, diseña un plan de investigación y genera un informe citado automáticamente.</div></div>
+      <div class="cap-item"><div class="cap-icon">🤝</div><div class="cap-title">Compartir cuaderno</div><div class="cap-desc">Comparte un enlace para que otros interactúen con tus documentos sin modificar las fuentes originales.</div></div>
+    </div>
+
+    <div class="prompt-section">
+      <div class="prompt-label">Prompts para usar en cualquier asignatura · Cópialo y pégalo en NotebookLM</div>
+      <div class="prompt-box">
+        <p id="pd-chat-1">"Tengo cargados varios textos sobre [tema]. Compara cómo cada fuente aborda el concepto de [concepto clave]. ¿En qué coinciden? ¿En qué difieren? Cita párrafos específicos de cada documento."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('chat-1', this)">Copiar prompt</button>
+
+      <div class="prompt-box" style="margin-top:16px;">
+        <p id="pd-chat-2">"Genera una tabla comparativa de los principales conceptos, autores o enfoques presentes en estos documentos. Columnas: nombre, autor o fuente, idea central, aplicación práctica, limitación o crítica principal."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('chat-2', this)" style="margin-top:12px;">Copiar prompt</button>
+
+      <div class="prompt-box" style="margin-top:16px;">
+        <p id="pd-chat-3">"¿Qué puntos de vista contradictorios o en tensión aparecen entre estas fuentes sobre [tema]? Identifica las contradicciones y explica desde qué posición argumenta cada autor."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('chat-3', this)" style="margin-top:12px;">Copiar prompt</button>
+    </div>
+  </div>
+
+  <!-- TAB 3: STUDIO -->
+  <div class="tab-content" id="tab-studio">
+    <div class="tab-header">
+      <div>
+        <div class="tab-num">03 · Studio</div>
+        <div class="tab-title">Del análisis al entregable</div>
+        <div class="tab-desc">El panel de Studio convierte la información procesada en productos concretos. Es el "acelerador de activos": transforma tus documentos en presentaciones, infografías, mapas mentales y videos en pocos clics.</div>
+      </div>
+      <div>
+        <div class="bloque-naranja">
+          <p>Importante: <strong>siempre revisa antes de usar.</strong> Los activos visuales pueden presentar errores en texto incrustado o inconsistencias lógicas. La supervisión humana es indispensable antes de presentar cualquier producto generado por Studio.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="capacidades">
+      <div class="cap-item"><div class="cap-icon">📑</div><div class="cap-title">Diapositivas editables</div><div class="cap-desc">Genera presentaciones completas desde tus documentos. Puedes pedir cambios de diseño o ajustes de contenido en lenguaje natural.</div></div>
+      <div class="cap-item"><div class="cap-icon">🗺️</div><div class="cap-title">Mapas mentales dinámicos</div><div class="cap-desc">Crea mapas interactivos donde cada nodo es clickeable para expandir subtemas o hacer preguntas específicas sobre ese concepto.</div></div>
+      <div class="cap-item"><div class="cap-icon">📊</div><div class="cap-title">Infografías</div><div class="cap-desc">Convierte datos y conceptos en visualizaciones estructuradas listas para exportar.</div></div>
+      <div class="cap-item"><div class="cap-icon">🎬</div><div class="cap-title">Videos explicativos</div><div class="cap-desc">Genera resúmenes en video estilo "pizarra blanca" o videos cinemáticos animados sobre el contenido de tus fuentes.</div></div>
+      <div class="cap-item"><div class="cap-icon">📋</div><div class="cap-title">Informes detallados</div><div class="cap-desc">Genera reportes estructurados con introducción, desarrollo y conclusiones basadas en tus documentos.</div></div>
+      <div class="cap-item"><div class="cap-icon">🔗</div><div class="cap-title">Exportación a Sheets</div><div class="cap-desc">Las tablas comparativas generadas pueden exportarse directamente a Google Sheets para su análisis posterior.</div></div>
+    </div>
+
+    <div class="pasos-titulo">Cómo usar Studio para preparar tu sesión</div>
+    <ul class="pasos">
+      <li><span class="paso-n">01</span><span>Con tus fuentes ya cargadas, ve al panel <strong>Studio</strong> (botón en la parte superior derecha).</span></li>
+      <li><span class="paso-n">02</span><span>Selecciona el tipo de activo que quieres generar: diapositivas, mapa mental, infografía o video.</span></li>
+      <li><span class="paso-n">03</span><span>Puedes dar instrucciones adicionales: "enfócate en los conceptos clave" o "usa un tono accesible para estudiantes de primer año" o "prioriza las aplicaciones prácticas".</span></li>
+      <li><span class="paso-n">04</span><span><strong>Revisa todo el contenido generado</strong> antes de usarlo. Verifica que los datos sean correctos y que las citas correspondan a los documentos originales.</span></li>
+      <li><span class="paso-n">05</span><span>Exporta o comparte el activo desde el mismo panel.</span></li>
+    </ul>
+  </div>
+
+  <!-- TAB 4: AUDIO -->
+  <div class="tab-content" id="tab-audio">
+    <div class="tab-header">
+      <div>
+        <div class="tab-num">04 · Audio Overview</div>
+        <div class="tab-title">Tu bibliografía como podcast</div>
+        <div class="tab-desc">NotebookLM genera una conversación entre dos presentadores de IA que debaten y explican el contenido de tus documentos. Disponible en español. En 2026 pasó de ser una experiencia pasiva a una <strong>interacción en tiempo real.</strong></div>
+      </div>
+      <div>
+        <div class="diferencia">
+          <div class="diferencia-label">La función "Join" — Lo más disruptivo</div>
+          <p style="font-size:13.5px;line-height:1.7;color:#C0B8AC;">Mientras escuchas el podcast generado puedes interrumpir a los presentadores con tu voz para pedir que profundicen en un concepto, que usen una analogía más simple o que relacionen el tema con un ejemplo concreto. <strong style="color:#E8490F;">Es un tutor personalizado que responde exclusivamente con tu bibliografía.</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Formato</th>
+            <th>Descripción</th>
+            <th>Cuándo usarlo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Inmersión Profunda</td><td>Debate exhaustivo de todos los temas del cuaderno</td><td>Primera lectura de un texto denso</td></tr>
+          <tr><td>El Informe</td><td>Síntesis estructurada y directa</td><td>Repaso antes de una sesión</td></tr>
+          <tr><td>La Crítica</td><td>Análisis de fortalezas y debilidades del contenido</td><td>Evaluación de fuentes académicas</td></tr>
+          <tr><td>El Debate</td><td>Dos posiciones enfrentadas sobre el mismo tema</td><td>Preparar un debate en clase</td></tr>
+          <tr><td>La Lección</td><td>Explicación progresiva de menor a mayor complejidad</td><td>Introducir un tema nuevo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prompt-section">
+      <div class="prompt-label">Cómo personalizar tu Audio Overview · Úsalos en cualquier asignatura</div>
+      <div class="prompt-box">
+        <p id="pd-audio-1">"Genera un Audio Overview en formato La Lección sobre [tema principal de tus documentos]. Empieza desde los conceptos más básicos y avanza hacia los más complejos. Usa ejemplos concretos aplicados a [tu área o contexto]."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('audio-1', this)">Copiar prompt</button>
+
+      <div class="prompt-box" style="margin-top:16px;">
+        <p id="pd-audio-2">"Genera un Audio Overview en formato El Debate sobre esta pregunta: [tu pregunta central]. Presenta los argumentos a favor y en contra usando exclusivamente lo que aparece en los documentos cargados. No agregues información externa."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('audio-2', this)" style="margin-top:12px;">Copiar prompt</button>
+
+      <div class="prompt-box" style="margin-top:16px;">
+        <p id="pd-audio-3">"Genera un Audio Overview en formato La Crítica sobre los documentos cargados. Identifica los argumentos más sólidos, los más débiles y los que generan más preguntas abiertas. Cierra con una síntesis de los puntos que merecen seguir siendo investigados."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('audio-3', this)" style="margin-top:12px;">Copiar prompt</button>
+    </div>
+  </div>
+
+  <!-- TAB 5: ESTUDIO -->
+  <div class="tab-content" id="tab-estudio">
+    <div class="tab-header">
+      <div>
+        <div class="tab-num">05 · Herramientas de estudio</div>
+        <div class="tab-title">Memorización activa desde tus fuentes</div>
+        <div class="tab-desc">NotebookLM automatiza el proceso de memorización con herramientas que aplican principios de aprendizaje activo: repetición espaciada, recuerdo activo y autoevaluación. Todo generado desde tus propios documentos.</div>
+      </div>
+      <div>
+        <div class="concepto-clave">
+          <p>"A diferencia de las herramientas de estudio tradicionales, NotebookLM cruza información de múltiples fuentes simultáneamente. Una pregunta puede integrar el libro de texto, las notas del docente y una conferencia de YouTube al mismo tiempo."</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="capacidades">
+      <div class="cap-item"><div class="cap-icon">❓</div><div class="cap-title">Quizzes automáticos</div><div class="cap-desc">Genera preguntas de opción múltiple basadas en el contenido específico de tus fuentes. No son preguntas genéricas: son preguntas sobre lo que tú cargaste.</div></div>
+      <div class="cap-item"><div class="cap-icon">🃏</div><div class="cap-title">Flashcards dinámicas</div><div class="cap-desc">Tarjetas de vocabulario y conceptos clave con seguimiento de dominio. Marca cada tarjeta como "lo tengo" o "fallé" y el sistema reprograma el repaso.</div></div>
+      <div class="cap-item"><div class="cap-icon">📋</div><div class="cap-title">Guías de estudio</div><div class="cap-desc">Genera resúmenes estructurados, preguntas frecuentes y cronologías de los temas de tus fuentes.</div></div>
+      <div class="cap-item"><div class="cap-icon">🎬</div><div class="cap-title">Cinematic Video Overviews</div><div class="cap-desc">Videos narrados con visualizaciones animadas del tema. Especialmente útil para procesos complejos que se entienden mejor en movimiento.</div></div>
+      <div class="cap-item"><div class="cap-icon">💾</div><div class="cap-title">Historial guardado</div><div class="cap-desc">Tu historial de chat y progreso en flashcards se guarda entre sesiones. Puedes retomar donde dejaste sin perder el contexto.</div></div>
+      <div class="cap-item"><div class="cap-icon">📱</div><div class="cap-title">App móvil</div><div class="cap-desc">iOS y Android. Permite consultar resúmenes de audio sin conexión a internet. Estudia en el transporte o mientras caminas.</div></div>
+    </div>
+
+    <div class="prompt-section">
+      <div class="prompt-label">Prompts para generar herramientas de estudio · Reemplaza los corchetes con tu contexto</div>
+      <div class="prompt-box">
+        <p id="pd-est-1">"Genera 10 preguntas de quiz sobre [tema] basadas en los documentos cargados. Incluye 4 opciones por pregunta y marca la correcta. Las preguntas deben ir de conceptos básicos a aplicaciones en situaciones reales de [tu área o asignatura]."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('est-1', this)">Copiar prompt</button>
+
+      <div class="prompt-box" style="margin-top:16px;">
+        <p id="pd-est-2">"Crea 15 flashcards sobre los conceptos clave de estos documentos. Formato: anverso = término o concepto; reverso = definición breve en mis propias palabras + un ejemplo concreto aplicado a [tu contexto o disciplina]."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('est-2', this)" style="margin-top:12px;">Copiar prompt</button>
+
+      <div class="prompt-box" style="margin-top:16px;">
+        <p id="pd-est-3">"Genera una guía de estudio completa sobre [tema] basada en estos documentos. Incluye: resumen ejecutivo, conceptos clave con definición, preguntas frecuentes con respuesta, y una cronología o mapa de relaciones entre los temas principales."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('est-3', this)" style="margin-top:12px;">Copiar prompt</button>
+    </div>
+  </div>
+
+  <!-- TAB 6: DOCENCIA -->
+  <div class="tab-content" id="tab-docencia">
+    <div class="tab-header">
+      <div>
+        <div class="tab-num">06 · En tu docencia universitaria</div>
+        <div class="tab-title">Usos concretos en el aula</div>
+        <div class="tab-desc">NotebookLM no es solo para estudiar: es para <strong>diseñar, investigar y reflexionar</strong> sobre tu práctica docente. Estos usos funcionan independientemente de tu asignatura, área o nivel.</div>
+      </div>
+      <div>
+        <div class="diferencia">
+          <div class="diferencia-label">Integridad académica</div>
+          <p style="font-size:13.5px;line-height:1.7;color:#C0B8AC;">NotebookLM está permitido para uso académico porque trabaja sobre tus propias fuentes y cita con exactitud. Sin embargo, <strong style="color:#E8490F;">el análisis e interpretación siempre deben ser tuyos.</strong> Usarlo para generar conclusiones que presentes como propias sin procesamiento crítico va en contra de cualquier norma de integridad académica.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="capacidades">
+      <div class="cap-item"><div class="cap-icon">📖</div><div class="cap-title">Cargar tu bibliografía del curso</div><div class="cap-desc">Sube los textos principales de tu asignatura y consulta conceptos específicos sin releer cada documento completo.</div></div>
+      <div class="cap-item"><div class="cap-icon">🔗</div><div class="cap-title">Cruzar fuentes de distintas áreas</div><div class="cap-desc">Carga artículos de disciplinas distintas y pregunta cómo se relacionan, contradicen o complementan entre sí.</div></div>
+      <div class="cap-item"><div class="cap-icon">🎓</div><div class="cap-title">Preparar una clase o práctica</div><div class="cap-desc">Consulta qué dicen tus fuentes sobre el tema que vas a abordar y genera una síntesis estructurada lista para usar.</div></div>
+      <div class="cap-item"><div class="cap-icon">✍️</div><div class="cap-title">Apoyar tu escritura académica</div><div class="cap-desc">Pide preguntas críticas sobre lo que escribiste para profundizar sin perder tu voz propia. La IA no escribe por ti: te interroga.</div></div>
+      <div class="cap-item"><div class="cap-icon">🔍</div><div class="cap-title">Investigar antes de diseñar</div><div class="cap-desc">Carga artículos académicos sobre tu contexto específico (estudiantes, institución, área) y cruza con tu bibliografía de referencia.</div></div>
+      <div class="cap-item"><div class="cap-icon">🎧</div><div class="cap-title">Aprender mientras te desplazas</div><div class="cap-desc">Genera un Audio Overview de tus documentos y escúchalo en el transporte. Interrumpe con tu voz cuando algo no quede claro.</div></div>
+    </div>
+
+    <div class="prompt-section">
+      <div class="prompt-label">Prompts para cualquier asignatura · Reemplaza los corchetes con tu contexto</div>
+      <div class="prompt-box">
+        <p id="pd-doc-1">"Tengo cargados los textos principales de mi asignatura de [nombre]. Explícame el concepto de [concepto clave] en términos accesibles y dame tres ejemplos de cómo aplicarlo en una clase universitaria de [nivel o carrera]."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('doc-1', this)">Copiar prompt</button>
+
+      <div class="prompt-box" style="margin-top:16px;">
+        <p id="pd-doc-2">"Aquí está un fragmento de mi propio texto o reflexión: [pega tu texto]. Basándote en los documentos cargados, ¿qué conceptos estoy usando implícitamente sin nombrarlos? ¿Qué conexiones teóricas podría hacer más explícitas para fortalecer mi argumento?"</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('doc-2', this)" style="margin-top:12px;">Copiar prompt</button>
+
+      <div class="prompt-box" style="margin-top:16px;">
+        <p id="pd-doc-3">"Voy a diseñar una actividad de aprendizaje sobre [tema] para estudiantes de [carrera, nivel]. ¿Qué dicen estos documentos sobre cómo abordar este tema? Dame los puntos clave con citas exactas y señala qué aspectos generan más debate entre los autores."</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('doc-3', this)" style="margin-top:12px;">Copiar prompt</button>
+
+      <div class="prompt-box" style="margin-top:16px;">
+        <p id="pd-doc-4">"Tengo un grupo de estudiantes con las siguientes características: [describe brevemente]. Basándote en los documentos cargados, ¿qué estrategias o enfoques recomienda la bibliografía para trabajar con este perfil estudiantil?"</p>
+      </div>
+      <button class="btn-copy" onclick="copiarPrompt('doc-4', this)" style="margin-top:12px;">Copiar prompt</button>
+    </div>
+  </div>
+
+  <!-- TAB 7: LIMITACIONES -->
+  <div class="tab-content" id="tab-limitaciones">
+    <div class="tab-header">
+      <div>
+        <div class="tab-num">07 · Limitaciones actuales</div>
+        <div class="tab-title">Lo que no puede hacer</div>
+        <div class="tab-desc">Conocer las limitaciones de una herramienta es tan importante como conocer sus capacidades. Estas no son razones para no usarla: son condiciones que debes gestionar con criterio docente.</div>
+      </div>
+      <div>
+        <div class="bloque-naranja">
+          <p>Ninguna limitación técnica es excusa para delegar el juicio pedagógico. <strong>La herramienta amplifica tu capacidad de análisis. No la reemplaza.</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="limitacion-item">
+      <div>
+        <div class="limit-titulo">Fuentes estáticas</div>
+        <div class="limit-badge badge-alta">Impacto alto</div>
+      </div>
+      <div class="limit-desc">Las fuentes cargadas son <strong>instantáneas fijas</strong>. Si el documento original en Google Drive cambia, NotebookLM no se actualiza automáticamente. Debes reimportar manualmente para trabajar con la versión más reciente. En el módulo esto significa que si actualizas tus materiales del curso, debes volver a cargarlos.</div>
+    </div>
+
+    <div class="limitacion-item">
+      <div>
+        <div class="limit-titulo">No inventa, pero tampoco va más allá</div>
+        <div class="limit-badge badge-alta">Impacto alto</div>
+      </div>
+      <div class="limit-desc">Su mayor fortaleza es también su límite: <strong>si la respuesta no está en tus fuentes, no la tiene</strong>. Si buscas creatividad pura, lluvia de ideas sin restricciones o conocimiento general que no has cargado, NotebookLM no es la herramienta correcta. Para eso usa ChatGPT, Claude o Gemini.</div>
+    </div>
+
+    <div class="limitacion-item">
+      <div>
+        <div class="limit-titulo">Calidad del audio</div>
+        <div class="limit-badge badge-media">Impacto medio</div>
+      </div>
+      <div class="limit-desc">Los presentadores de Audio Overview pueden ser ocasionalmente demasiado entusiastas o simplistas para temas de alta complejidad técnica. En temas pedagógicos densos, el "banter" de los anfitriones puede perder matices importantes. <strong>Siempre complementa el audio con la lectura del texto original.</strong></div>
+    </div>
+
+    <div class="limitacion-item">
+      <div>
+        <div class="limit-titulo">Errores en activos visuales</div>
+        <div class="limit-badge badge-media">Impacto medio</div>
+      </div>
+      <div class="limit-desc">Las infografías, videos y diapositivas generadas en Studio pueden presentar <strong>errores en texto incrustado o inconsistencias lógicas</strong> en las imágenes. Nunca presentes un activo visual de NotebookLM sin revisarlo completo primero. La supervisión humana es indispensable.</div>
+    </div>
+
+    <div class="limitacion-item">
+      <div>
+        <div class="limit-titulo">Límite de fuentes</div>
+        <div class="limit-badge badge-baja">Impacto bajo</div>
+      </div>
+      <div class="limit-desc">La versión gratuita admite hasta <strong>50 fuentes por cuaderno</strong>. Para la mayoría de usos en este módulo es más que suficiente. Sin embargo, si trabajas con colecciones bibliográficas muy extensas, considera organizar múltiples cuadernos por tema.</div>
+    </div>
+
+    <div class="limitacion-item">
+      <div>
+        <div class="limit-titulo">Privacidad de datos</div>
+        <div class="limit-badge badge-alta">Impacto alto</div>
+      </div>
+      <div class="limit-desc"><strong>No cargues información personal identificable de tus estudiantes</strong> (nombres, calificaciones, datos de contacto). Las instituciones con políticas de privacidad estrictas (P4 en la clasificación de la UC) prohíben el ingreso de este tipo de datos. En el módulo: describe situaciones de aula de forma anónima antes de pegarlas en NotebookLM.</div>
+    </div>
+
+  </div>
+
+</div><!-- /content -->
+
+<!-- Prompts ocultos para copiar -->
+<textarea class="pt" id="pt-chat-1">"Tengo cargados varios textos sobre [tema]. Compara cómo cada fuente aborda el concepto de [concepto clave]. ¿En qué coinciden? ¿En qué difieren? Cita párrafos específicos de cada documento."</textarea>
+<textarea class="pt" id="pt-chat-2">"Genera una tabla comparativa de los principales conceptos, autores o enfoques presentes en estos documentos. Columnas: nombre, autor o fuente, idea central, aplicación práctica, limitación o crítica principal."</textarea>
+<textarea class="pt" id="pt-chat-3">"¿Qué puntos de vista contradictorios o en tensión aparecen entre estas fuentes sobre [tema]? Identifica las contradicciones y explica desde qué posición argumenta cada autor."</textarea>
+<textarea class="pt" id="pt-audio-1">"Genera un Audio Overview en formato La Lección sobre [tema principal de tus documentos]. Empieza desde los conceptos más básicos y avanza hacia los más complejos. Usa ejemplos concretos aplicados a [tu área o contexto]."</textarea>
+<textarea class="pt" id="pt-audio-2">"Genera un Audio Overview en formato El Debate sobre esta pregunta: [tu pregunta central]. Presenta los argumentos a favor y en contra usando exclusivamente lo que aparece en los documentos cargados. No agregues información externa."</textarea>
+<textarea class="pt" id="pt-audio-3">"Genera un Audio Overview en formato La Crítica sobre los documentos cargados. Identifica los argumentos más sólidos, los más débiles y los que generan más preguntas abiertas. Cierra con una síntesis de los puntos que merecen seguir siendo investigados."</textarea>
+<textarea class="pt" id="pt-est-1">"Genera 10 preguntas de quiz sobre [tema] basadas en los documentos cargados. Incluye 4 opciones por pregunta y marca la correcta. Las preguntas deben ir de conceptos básicos a aplicaciones en situaciones reales de [tu área o asignatura]."</textarea>
+<textarea class="pt" id="pt-est-2">"Crea 15 flashcards sobre los conceptos clave de estos documentos. Formato: anverso = término o concepto; reverso = definición breve en mis propias palabras + un ejemplo concreto aplicado a [tu contexto o disciplina]."</textarea>
+<textarea class="pt" id="pt-est-3">"Genera una guía de estudio completa sobre [tema] basada en estos documentos. Incluye: resumen ejecutivo, conceptos clave con definición, preguntas frecuentes con respuesta, y una cronología o mapa de relaciones entre los temas principales."</textarea>
+<textarea class="pt" id="pt-doc-1">"Tengo cargados los textos principales de mi asignatura de [nombre]. Explícame el concepto de [concepto clave] en términos accesibles y dame tres ejemplos de cómo aplicarlo en una clase universitaria de [nivel o carrera]."</textarea>
+<textarea class="pt" id="pt-doc-2">"Aquí está un fragmento de mi propio texto o reflexión: [pega tu texto]. Basándote en los documentos cargados, ¿qué conceptos estoy usando implícitamente sin nombrarlos? ¿Qué conexiones teóricas podría hacer más explícitas para fortalecer mi argumento?"</textarea>
+<textarea class="pt" id="pt-doc-3">"Voy a diseñar una actividad de aprendizaje sobre [tema] para estudiantes de [carrera, nivel]. ¿Qué dicen estos documentos sobre cómo abordar este tema? Dame los puntos clave con citas exactas y señala qué aspectos generan más debate entre los autores."</textarea>
+<textarea class="pt" id="pt-doc-4">"Tengo un grupo de estudiantes con las siguientes características: [describe brevemente]. Basándote en los documentos cargados, ¿qué estrategias o enfoques recomienda la bibliografía para trabajar con este perfil estudiantil?"</textarea>
+
+<script>
+  function showTab(id) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('visible'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('visible');
+    event.target.classList.add('active');
+  }
+
+  function copiarPrompt(id, btn) {
+    const textarea = document.getElementById('pt-' + id);
+    const texto = textarea.value.trim();
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(texto)
+        .then(() => confirmar(btn))
+        .catch(() => fallback(textarea, btn));
+    } else {
+      fallback(textarea, btn);
+    }
+  }
+
+  function fallback(textarea, btn) {
+    textarea.style.display = 'block';
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    try { document.execCommand('copy'); confirmar(btn); }
+    catch(e) {
+      const w = window.open('', '_blank', 'width=600,height=400');
+      w.document.write('<html><body style="background:#111;color:#F5F0E8;font-family:Arial;padding:24px;"><h3 style="color:#E8490F;margin-bottom:16px;">Copia el texto (Ctrl+A, Ctrl+C)</h3><textarea style="width:100%;height:300px;background:#1A1A1A;color:#F5F0E8;border:1px solid #E8490F;padding:12px;font-size:13px;">' + textarea.value + '</textarea></body></html>');
+    }
+    textarea.style.display = 'none';
+  }
+
+  function confirmar(btn) {
+    const orig = btn.textContent;
+    btn.textContent = '¡Copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2200);
+  }
+</script>
+</body>
+</html>
